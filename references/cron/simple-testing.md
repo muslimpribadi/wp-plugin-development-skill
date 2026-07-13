@@ -1,17 +1,35 @@
-# Testing of WP-Cron
+# Testing WP-Cron Events
 
 ## WP-CLI
 
-Cron jobs can be tested usingWP-CLI. It offers commands like```wp cron event list```and```wp cron event run {job name}```.Check the documentationfor more details.
+```bash
+# List all scheduled events
+wp cron event list
 
-## WP-Cron Management Plugins
+# Run a specific event immediately
+wp cron event run myplugin_cron_hook
 
-Several plugins are available on the WordPress.org Plugin Directory for viewing, editing, and controlling the scheduled cron events and available schedules on your site.
+# Delete a scheduled event
+wp cron event delete myplugin_cron_hook
 
-## _get_cron_array()
+# Delete all scheduled events
+wp cron event delete --all
+```
 
-The```_get_cron_array()```functionreturns an array of all currently scheduled cron events. Use this function if you need to inspect the raw list of events.
+## Programmatic Inspection
 
-## wp_get_schedules()
+```php
+// View all scheduled cron events (raw data)
+$crons = _get_cron_array();
+print_r( $crons );
 
-The```wp_get_schedules()```functionreturns an array of available event recurrence schedules. Use this function if you need to inspect the raw list of available schedules.
+// View available schedules
+$schedules = wp_get_schedules();
+print_r( $schedules );
+```
+
+## Third-Party Plugins
+
+Several plugins provide UI for managing cron events:
+- **WP Crontrol** — View, edit, and run scheduled events from admin UI
+- **Event Monitor** — Log cron event executions with timestamps and results

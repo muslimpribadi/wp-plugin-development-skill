@@ -1,78 +1,119 @@
-# Scheduling WP Cron Events
-
-The WP Cron system uses hooks to add new scheduled tasks.
+# Scheduling WP-Cron Events
 
 ## Adding the Hook
 
-In order to get your task to run you must create your own custom hook and give that hook the name of a function to execute. This is a very important step. Forget it and your task will never run.
+Create a custom hook and assign a callback function:
 
-The following example will create a hook. The first parameter is the name of the hook you are creating, and the second is the name of the function to call.
+```php
+add_action( 'myplugin_cron_hook', 'myplugin_cron_exec' );
 
-```python
-```add_action( 'bl_cron_hook', 'bl_cron_exec' );```
+function myplugin_cron_exec() {
+    // Task logic here
+}
 ```
 
-Remember, the “bl_” part of the function name is afunction prefix. You can learn why prefixes are importanthere.You can read more about actionshere.
+> **Note:** Prefix all function names with your plugin namespace to avoid conflicts.
 
-## Scheduling the Task
+## Scheduling a Recurring Event
 
-An important note is that WP-Cron is a simple task scheduler. As we know, tasks are added by the hook created to call the function that runs the desired task. However if you call```wp_schedule_event()```multiple times, even with the same hook name, the event will be scheduled multiple times. If your code adds the task on each page load this could result in the task being scheduled several thousand times. This is not what you want.
-
-WordPress provides a convenient function calledwp_next_scheduled()to check if a particular hook is already scheduled.```wp_next_scheduled()```takes one parameter, the hook name. It will return either a string containing the timestamp of the next execution or false, signifying the task is not scheduled. It is used like so:
-
-```python
-```wp_next_scheduled( 'bl_cron_hook' )```
+```php
+wp_schedule_event( int $timestamp, string $recurrence, string $hook, array $args = array() )
 ```
 
-Scheduling a recurring task is accomplished withwp_schedule_event(). This function takes three required parameters, and one additional parameter that is an array that can be passed to the function executing the wp-cron task. We will focus on the first three parameters. The parameters are as follows:
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `$timestamp` | int | Yes | UNIX timestamp of first execution |
+| `$recurrence` | string | Yes | Interval name (`'hourly'`, `'daily'`, or custom) |
+| `$hook` | string | Yes | Name of the action hook to trigger |
+| `$args` | array | No | Arguments passed to the callback function |
 
-- ```$timestamp```– The UNIX timestamp of the first time this task should execute
-- ```$recurrence```– The name of the interval in which the task will recur in seconds
-- ```$hook```– The name of our custom hook to call
+### Example
 
-We will use the 5 second interval we createdhereand the hook we created above, like so:
+```php
+add_action( 'myplugin_init', 'myplugin_schedule_task' );
 
-```python
-```wp_schedule_event( time(), 'five_seconds', 'bl_cron_hook' );```
+function myplugin_schedule_task() {
+    if ( ! wp_next_scheduled( 'myplugin_cron_hook' ) ) {
+        wp_schedule_event( time(), 'hourly', 'myplugin_cron_hook' );
+    }
+}
 ```
 
-Remember, we need to first ensure the task is not already scheduled. So we wrap the scheduling code in a check like this:
+### Scheduling with Arguments
 
-```python
-```if ( ! wp_next_scheduled( 'bl_cron_hook' ) ) {
-    wp_schedule_event( time(), 'five_seconds', 'bl_cron_hook' );
-}```
+```php
+if ( ! wp_next_scheduled( 'myplugin_send_emails' ) ) {
+    wp_schedule_event( time(), 'daily', 'myplugin_send_emails', array( 'user_id' => 42 ) );
+}
+
+add_action( 'myplugin_send_emails', 'myplugin_send_to_user', 10, 1 );
+
+function myplugin_send_to_user( $args ) {
+    $user_id = $args['user_id'];
+    // Send email to user
+}
 ```
 
-## Unscheduling tasks
+## Unscheduling a Task
 
-When you no longer need a task scheduled you can unschedule tasks withwp_unschedule_event(). This function takes the following two parameters:
-
-- ```$timestamp```– Timestamp of the next occurrence of the task
-- ```$hook```– Name of the custom hook to be called
-
-This function will not only unschedule the task indicated by the timestamp, it will also unschedule all future occurrences of the task. Since you probably will not know the timestamp for the next task, there is another handy function,wp_next_scheduled()that will find it for you.```wp_next_scheduled()```takes one parameter (that we care about):
-
-- ```$hook```– The name of the hook that is called to execute the task
-
-Put it all together and the code looks like:
-
-```python
-```$timestamp = wp_next_scheduled( 'bl_cron_hook' );
-wp_unschedule_event( $timestamp, 'bl_cron_hook' );```
+```php
+wp_unschedule_event( int $timestamp, string $hook )
 ```
 
-It is very important to unschedule tasks when you no longer need them because WordPress will continue to attempt to execute the tasks, even though they are no longer in use (or even after your plugin has been deactivated or removed). An important place to remember to unschedule your tasks is upon plugin deactivation.
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `$timestamp` | int | Yes | Timestamp of the event to unschedule |
+| `$hook` | string | Yes | Hook name associated with the event |
 
-Unfortunately there are many plugins in the WordPress.org Plugin Directory that do not clean up after themselves. If you find one of these plugins please let the author know to update their code. WordPress provides a function calledregister_deactivation_hook()that allows developers to run a function when their plugin is deactivated. It is very simple to setup and looks like:
+### Example
 
-```python
-```register_deactivation_hook( __FILE__, 'bl_deactivate' );
-
-function bl_deactivate() {
-    $timestamp = wp_next_scheduled( 'bl_cron_hook' );
-    wp_unschedule_event( $timestamp, 'bl_cron_hook' );
-}```
+```php
+$timestamp = wp_next_scheduled( 'myplugin_cron_hook' );
+wp_unschedule_event( $timestamp, 'myplugin_cron_hook' );
 ```
 
-You can read more about activation and deactivation hookshere.
+## Checking if a Task is Scheduled
+
+```php
+wp_next_scheduled( string $hook )
+```
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `$hook` | string | Yes | Hook name to check |
+| **Returns** | int\|false | — | UNIX timestamp of next run, or `false` if not scheduled |
+
+### Example
+
+```php
+if ( wp_next_scheduled( 'myplugin_cron_hook' ) ) {
+    // Task is already scheduled
+}
+```
+
+## Cleanup on Deactivation
+
+Always unschedule tasks when your plugin deactivates:
+
+```php
+register_deactivation_hook( __FILE__, 'myplugin_deactivate' );
+
+function myplugin_deactivate() {
+    $timestamp = wp_next_scheduled( 'myplugin_cron_hook' );
+    if ( $timestamp ) {
+        wp_unschedule_event( $timestamp, 'myplugin_cron_hook' );
+    }
+}
+```
+
+> **Note:** Without cleanup, orphaned cron events continue to run even after plugin deactivation.
+
+## Listing Scheduled Events
+
+```php
+// List all scheduled cron events (raw array)
+$crons = _get_cron_array();
+
+// List available schedules
+$schedules = wp_get_schedules();
+```

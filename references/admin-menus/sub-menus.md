@@ -1,116 +1,176 @@
 # Sub-Menus
 
-## Add a Sub-Menu
+## add_submenu_page()
 
-To add a new Sub-menu to WordPress Administration, use the```add_submenu_page()```function.
+Register a submenu item under an existing top-level menu.
 
-```python
-```add_submenu_page(
-	string $parent_slug,
-	string $page_title,
-	string $menu_title,
-	string $capability,
-	string $menu_slug,
-	callable $function = ''
-);```
-```
+**Hook:** `admin_menu` (priority: 999)
+**Returns:** `$hook_suffix` string (for form processing)
+
+### Parameters
+
+| Param | Type | Required | Default | Description |
+|-------|------|----------|---------|-------------|
+| $parent_slug | string | Yes | — | Slug of the parent menu |
+| $page_title | string | Yes | — | Title displayed in browser tab |
+| $menu_title | string | Yes | — | Text displayed in submenu |
+| $capability | string | Yes | — | Minimum capability required |
+| $menu_slug | string | Yes | — | Unique identifier for the page |
+| $function | callable | No | `''` | Callback that renders page HTML |
 
 ### Example
 
-Lets say we want to add a Sub-menu “WPOrg Options” to the “Tools” Top-level menu.
+```php
+add_action( 'admin_menu', 'myplugin_register_submenus' );
 
-The first stepwill be creating a function which will output the HTML. In this function we will perform the necessary security checks and render the options we’ve registered using theSettings API.We recommend wrapping your HTML using a```<div>```with a class of```wrap```.
-
-```python
-```function wporg_options_page_html() {
-	// check user capabilities
-	if ( ! current_user_can( 'manage_options' ) ) {
-		return;
-	}
-	?>
-	<div class="wrap">
-		<h1><?php echo esc_html( get_admin_page_title() ); ?></h1>
-		<form action="options.php" method="post">
-			<?php
-			// output security fields for the registered setting "wporg_options"
-			settings_fields( 'wporg_options' );
-			// output setting sections and their fields
-			// (sections are registered for "wporg", each field is registered to a specific section)
-			do_settings_sections( 'wporg' );
-			// output save settings button
-			submit_button( __( 'Save Settings', 'textdomain' ) );
-			?>
-		</form>
-	</div>
-	<?php
-}```
-```
-
-The second stepwill be registering our WPOrg Options Sub-menu. The registration needs to occur during the```admin_menu```action hook.
-
-```python
-```function wporg_options_page()
-{
-	add_submenu_page(
-		'tools.php',
-		'WPOrg Options',
-		'WPOrg Options',
-		'manage_options',
-		'wporg',
-		'wporg_options_page_html'
-	);
-}
-add_action('admin_menu', 'wporg_options_page');```
-```
-
-For a list of parameters and what each do please see theadd_submenu_page()in the reference.
-
-## Predefined Sub-Menus
-
-Wouldn’t it be nice if we had helper functions that define the```$parent_slug```for WordPress built-in Top-level menus and save us from manually searching it through the source code?
-
-Below is a list of parent slugs and their helper functions:
-
-- add_dashboard_page()–```index.php```
-- add_posts_page()–```edit.php```
-- add_media_page()–```upload.php```
-- add_pages_page()–```edit.php?post_type=page```
-- add_comments_page()–```edit-comments.php```
-- add_theme_page()–```themes.php```
-- add_plugins_page()–```plugins.php```
-- add_users_page()–```users.php```
-- add_management_page()–```tools.php```
-- add_options_page()–```options-general.php```
-- add_options_page()–```settings.php```
-- add_links_page()–```link-manager.php```– requires a plugin since WP 3.5+
-- Custom Post Type –```edit.php?post_type=wporg_post_type```
-- Network Admin –```settings.php```
-
-## Remove a Sub-Menu
-
-The process of removing Sub-menus is exactly the same asremoving Top-level menus.
-
-## Submitting forms
-
-The process of handling form submissions within Sub-menus is exactly the same asSubmitting forms within Top-Level Menus.
-
-```add_submenu_page()```along with all functions for pre-defined sub-menus (```add_dashboard_page```,```add_posts_page```, etc.) will return a```$hookname```, which you can use as the first parameter of```add_action```in order to handle the submission of forms within custom pages:
-
-```python
-```function wporg_options_page() {
-	$hookname = add_submenu_page(
-		'tools.php',
-		'WPOrg Options',
-		'WPOrg Options',
-		'manage_options',
-		'wporg',
-		'wporg_options_page_html'
-	);
-
-	add_action( 'load-' . $hookname, 'wporg_options_page_html_submit' );
+function myplugin_register_submenus() {
+    add_submenu_page(
+        'edit.php',           // parent slug (Posts)
+        'My Plugin Settings', // page_title
+        'Settings',           // menu_title
+        'manage_options',     // capability
+        'my-plugin-settings', // menu_slug
+        'myplugin_render_settings' // callback
+    );
 }
 
-add_action('admin_menu', 'wporg_options_page');```
+function myplugin_render_settings() {
+    if ( ! current_user_can( 'manage_options' ) ) {
+        return;
+    }
+    ?>
+    <div class="wrap">
+        <h1><?php echo esc_html( get_admin_page_title() ); ?></h1>
+        <?php myplugin_render_content(); ?>
+    </div>
+    <?php
+}
 ```
 
-As always, do not forget to check whether the form is being submitted,  do CSRF verification,validation, and sanitization.
+## Predefined Sub-Menu Helpers
+
+WordPress provides helper functions for built-in top-level menus. Each returns `$hook_suffix`.
+
+| Function | Parent Slug | Parent Menu |
+|----------|-------------|-------------|
+| `add_dashboard_page()` | `index.php` | Dashboard |
+| `add_posts_page()` | `edit.php` | Posts |
+| `add_media_page()` | `upload.php` | Media |
+| `add_pages_page()` | `edit.php?post_type=page` | Pages |
+| `add_comments_page()` | `edit-comments.php` | Comments |
+| `add_theme_page()` | `themes.php` | Appearance |
+| `add_plugins_page()` | `plugins.php` | Plugins |
+| `add_users_page()` | `users.php` | Users |
+| `add_management_page()` | `tools.php` | Tools |
+| `add_options_page()` | `options-general.php` | Settings |
+
+### Custom Post Type Parent Slugs
+
+```php
+// For a CPT registered with 'menu_slug' => 'edit.php?post_type=product'
+add_submenu_page(
+    'edit.php?post_type=product',  // parent slug
+    'Product Settings',             // page_title
+    'Settings',                     // menu_title
+    'manage_options',               // capability
+    'product-settings',             // menu_slug
+    'myplugin_render_product_settings'
+);
+```
+
+## add_*_page() Helpers
+
+Use these for common cases instead of `add_submenu_page()` directly:
+
+```php
+// Adds submenu under "Posts"
+add_posts_page(
+    'My Post Tools',      // page_title
+    'Tools',              // menu_title
+    'edit_posts',         // capability
+    'my-post-tools',      // menu_slug
+    'myplugin_render_tools'
+);
+
+// Adds submenu under "Settings"
+add_options_page(
+    'My Plugin Options',  // page_title
+    'My Plugin',          // menu_title
+    'manage_options',     // capability
+    'my-plugin-options',  // menu_slug
+    'myplugin_render_options'
+);
+```
+
+## remove_submenu_page()
+
+Remove a registered submenu item.
+
+**Hook:** `admin_menu` (priority: 99)
+
+### Parameters
+
+| Param | Type | Required | Description |
+|-------|------|----------|-------------|
+| $parent_slug | string | Yes | Parent menu slug |
+| $menu_slug | string | Yes | Submenu slug to remove |
+
+### Example
+
+```php
+add_action( 'admin_menu', 'myplugin_remove_submenus', 99 );
+
+function myplugin_remove_submenus() {
+    remove_submenu_page( 'edit.php', 'edit.php?post_format=aside' );
+}
+```
+
+## Form Submission
+
+Capture `$hook_suffix` from `add_submenu_page()` and use `load-$hook_suffix`:
+
+```php
+add_action( 'admin_menu', 'myplugin_register_submenus' );
+
+function myplugin_register_submenus() {
+    $hook_suffix = add_submenu_page(
+        'tools.php',
+        'My Plugin Tools',
+        'Tools',
+        'manage_options',
+        'my-plugin-tools',
+        'myplugin_render_tools'
+    );
+
+    add_action( "load-{$hook_suffix}", 'myplugin_handle_form' );
+}
+
+function myplugin_handle_form() {
+    if ( ! isset( $_POST['myplugin_nonce'] ) ||
+         ! wp_verify_nonce( $_POST['myplugin_nonce'], 'myplugin_save' ) ) {
+        return;
+    }
+
+    if ( ! current_user_can( 'manage_options' ) ) {
+        wp_die( 'Insufficient permissions.' );
+    }
+
+    // Process sanitized data
+    $value = sanitize_text_field( $_POST['myplugin_setting'] );
+    update_option( 'myplugin_setting', $value );
+
+    wp_redirect( admin_url( 'admin.php?page=my-plugin-tools&settings-updated=true' ) );
+    exit;
+}
+```
+
+### Form Action Attribute
+
+```php
+<form action="<?php echo esc_url( menu_page_url( 'my-plugin-tools' ) ); ?>" method="post">
+    <?php wp_nonce_field( 'myplugin_save', 'myplugin_nonce' ); ?>
+    <!-- form fields -->
+</form>
+```
+
+> **Note:** `menu_page_url()` escapes and echoes by default. Use `menu_page_url( 'slug', false )` to return without echoing.

@@ -1,52 +1,64 @@
-# Hooking WP-Cron Into the System Task Scheduler
+# System Cron Integration
 
-As previously mentioned, WP-Cron does not run continuously, which can be an issue if there are critical tasks that must run on time. There is an easy solution for this. Simply set up your system’s task scheduler to run on the intervals you desire (or at the specific time needed). The easiest solution is to use a tool to make a web request to the```wp-cron.php```file.
+WP-Cron runs on page load, which can cause delays or missed executions for time-sensitive tasks. For production sites, replace WP-Cron with a real system scheduler.
 
-After scheduling the task on your system, there is one more step to complete. WordPress will continue to run WP-Cron on each page load. This is no longer necessary and will contribute to extra resource usage on your server. WP-Cron can be disabled in the```wp-config.php```file. Open the```wp-config.php```file for editing and add the following line:
+## Step 1: Disable WP-Cron
 
-```python
-```define( 'DISABLE_WP_CRON', true );```
+Add to `wp-config.php` before `require_once( ABSPATH . 'wp-settings.php' );`:
+
+```php
+define( 'DISABLE_WP_CRON', true );
 ```
 
-## Windows
+## Step 2: Configure System Cron
 
-Windows calls their time based scheduling system the Task Scheduler. It can be accessed via theAdministrative Toolsin the control panel.
+### Linux / macOS (crontab)
 
-How you setup the task varies with server setup. One method is to use PowerShell and a Basic Task. After creating a Basic Task the following command can be used to call the WordPress Cron script.
+```bash
+# Edit crontab
+crontab -e
 
-```python
-```powershell "Invoke-WebRequest http://YOUR_SITE_URL/wp-cron.php"```
+# Add entry — runs every 15 minutes
+*/15 * * * * wget -q -O - http://your-site.com/wp-cron.php?doing_wp_cron >/dev/null 2>&1
 ```
 
-## MacOS and Linux
+**Crontab syntax:** `minute hour day-of-month month day-of-week command`
 
-Mac OS X and Linux both use cron as their time based scheduling system. It is typically access from the terminal with the```crontab -e```command. It should be noted that tasks will be run as a regular user or as root depending on the system user running the command.
+| Field | Value Range | Example |
+|-------|-------------|---------|
+| Minute | 0–59 | `*/15` = every 15 min |
+| Hour | 0–23 | `2` = at 2 AM |
+| Day of month | 1–31 | `*` = every day |
+| Month | 1–12 | `*` = every month |
+| Day of week | 0–7 (0,7=Sunday) | `1-5` = weekdays |
 
-Cron has a specific syntax that needs to be followed and contains the following parts:
+**Common examples:**
 
-- Minute
-- Hour
-- Day of month
-- Month
-- Day of week
-- Command to execute
+```bash
+# Every 15 minutes
+*/15 * * * * wget -q -O - http://example.com/wp-cron.php?doing_wp_cron >/dev/null 2>&1
 
-If a command should be run regardless of one of the time sections an asterisk (*) should be used. For example if you wanted to run a command every 15 minutes regardless of the hour, day, or month it would look like:
+# Daily at midnight
+0 0 * * * wget -q -O - http://example.com/wp-cron.php?doing_wp_cron >/dev/null 2>&1
 
-```python
-```*/15 * * * * command```
+# Every hour on the hour
+0 * * * * wget -q -O - http://example.com/wp-cron.php?doing_wp_cron >/dev/null 2>&1
 ```
 
-Many servers have```wget```installed and this is an easy tool to call the WordPress Cron script.
+### Windows (Task Scheduler)
 
-```python
-```wget --delete-after http://YOUR_SITE_URL/wp-cron.php```
+Create a Basic Task and use PowerShell:
+
+```powershell
+Invoke-WebRequest http://your-site.com/wp-cron.php?doing_wp_cron
 ```
 
-Note: without –delete-after option, wget would save the output of the HTTP GET request.
+### Alternative HTTP Tools
 
-A daily call to your site’s WordPress Cron that triggers at midnight every night could look similar to:
+| Tool | Command | Notes |
+|------|---------|-------|
+| `wget` | `wget -q -O - URL` | `-q` quiet, `-O -` no file output |
+| `curl` | `curl -s URL` | `-s` silent mode |
+| `lynx` | `lynx -dump URL` | Text browser |
 
-```python
-```0 0 * * * wget --delete-after http://YOUR_SITE_URL/wp-cron.php```
-```
+> **Note:** Use `?doing_wp_cron` to prevent race conditions. Without it, concurrent requests may trigger multiple simultaneous cron runs.

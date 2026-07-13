@@ -1,44 +1,58 @@
 # Options API
 
-The Options API, added in WordPress 1.0, allows creating, reading, updating and deleting of WordPress options. In combination with theSettings APIit allows controlling of options defined in settings pages.
+The Options API provides functions to store, retrieve, update, and delete WordPress options from the `{$wpdb->prefix}_options` table.
 
-## Where Options are Stored?
+## Functions — Single Site
 
-Options are stored in the```{$wpdb->prefix}_options```table.```$wpdb->prefix```is defined by the```$table_prefix```variable set in the```wp-config.php```file.
+| Function | Purpose | Signature |
+|----------|---------|-----------|
+| `add_option()` | Add new option | `add_option( string $option, mixed $value, string $deprecated = '', bool $autoload = 'yes' )` |
+| `get_option()` | Get option value | `get_option( string $option, mixed $default = false )` |
+| `update_option()` | Update existing option | `update_option( string $option, mixed $value )` |
+| `delete_option()` | Delete an option | `delete_option( string $option )` |
 
-## How Options are Stored?
+## Functions — Multisite (Site-Level)
 
-Options may be stored in the WordPress database in one of two ways: as a single value or as an array of values.
+| Function | Purpose | Signature |
+|----------|---------|-----------|
+| `add_site_option()` | Add site-level option | `add_site_option( string $option, mixed $value )` |
+| `get_site_option()` | Get site-level option | `get_site_option( string $option, mixed $default = false )` |
+| `update_site_option()` | Update site-level option | `update_site_option( string $option, mixed $value )` |
+| `delete_site_option()` | Delete site-level option | `delete_site_option( string $option )` |
+
+> **Note:** Site options are shared across all sites in a multisite installation. Use single-site options for per-site settings.
+
+## Storage Patterns
 
 ### Single Value
 
-When saved as a single value, the option name refers to a single value.
-
-```python
-```// add a new option
-add_option('wporg_custom_option', 'hello world!');
-// get an option
-$option = get_option('wporg_custom_option');```
+```php
+add_option( 'my_plugin_key', 'hello world' );
+$value = get_option( 'my_plugin_key' );
 ```
 
-### Array of Values
+### Array of Values (Recommended for Related Options)
 
-When saved as an array of values, the option name refers to an array, which itself may be comprised key/value pairs.
+```php
+// Store as a single array option
+update_option( 'my_plugin_settings', array(
+    'title'   => 'My Plugin',
+    'enabled' => true,
+    'count'   => 42,
+) );
 
-```python
-```// array of options
-$data_r = array('title' => 'hello world!', 1, false );
-// add a new option
-add_option('wporg_custom_option', $data_r);
-// get an option
-$options_r = get_option('wporg_custom_option');
-// output the title
-echo esc_html($options_r['title']);```
+// Retrieve and access
+$settings = get_option( 'my_plugin_settings' );
+echo esc_html( $settings['title'] );
 ```
 
-If you are working with a large number of related options, storing them as an array can have a positive impact on overall performance.
-Accessing data as individual options may result in many individual database transactions, and as a rule, database transactions are expensive operations (in terms of time and server resources). When you store or retrieve an array of options, it happens in a single transaction, which is ideal.
+> **Best Practice:** Store related options as a single array. This reduces database transactions — one `SELECT`/`UPDATE` instead of many individual option queries.
 
-## Function Reference
+## Key Notes
 
-Add OptionGet OptionUpdate OptionDelete Optionadd_option()get_option()update_option()delete_option()add_site_option()get_site_option()update_site_option()delete_site_option()
+| Consideration | Detail |
+|---------------|--------|
+| Autoload | Third argument to `add_option()` / `update_option()`: `'yes'` (default, loaded on every page) or `'no'` (loaded only when explicitly fetched). Use `'no'` for large options not needed on every request. |
+| Default value | `get_option()` returns `false` if option doesn't exist — always provide a default: `get_option( 'my_option', 'default_value' )` |
+| Sanitization | Always sanitize output (`esc_html()`, `esc_attr()`) and validate/sanitize input on save |
+| Transient alternatives | For temporary data, consider `set_transient()` instead of options |

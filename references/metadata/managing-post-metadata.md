@@ -1,68 +1,101 @@
 # Managing Post Metadata
 
-## Adding Metadata
+## Core Functions
 
-Adding metadata can be done quite easily withadd_post_meta(). The function accepts a```post_id```, a```meta_key```, a```meta_value```, and a```unique```flag.
+| Function | Purpose | Signature |
+|----------|---------|-----------|
+| `add_post_meta()` | Add a new meta entry | `add_post_meta( $post_id, $meta_key, $meta_value, $unique = false )` |
+| `update_post_meta()` | Update existing or create if missing | `update_post_meta( $post_id, $meta_key, $meta_value, $prev_value = '' )` |
+| `delete_post_meta()` | Delete a meta entry | `delete_post_meta( $post_id, $meta_key, $meta_value = '' )` |
+| `get_post_meta()` | Retrieve meta value(s) | `get_post_meta( $post_id, $meta_key = '', $single = false )` |
 
-The```meta_key```is how your plugin will reference the meta value elsewhere in your code. Something like```mycrazymetakeyname```would work, however a prefix related to your plugin or theme followed by a description of the key would be more useful.```wporg_featured_menu```might be a good one. It should be noted that the same```meta_key```may be used multiple times to store variations of the metadata (see the unique flag below).
+### add_post_meta() Parameters
 
-The```meta_value```can be a string, integer, or an array. If it’s an array, it will be automatically serialized before being stored in the database.
+| Parameter | Type | Required | Default | Description |
+|-----------|------|----------|---------|-------------|
+| `$post_id` | int | Yes | — | ID of the post |
+| `$meta_key` | string | Yes | — | Meta key name (prefix with plugin name, e.g., `myplugin_value`) |
+| `$meta_value` | mixed | Yes | — | Value to store (string, int, array — arrays are serialized) |
+| `$unique` | bool | No | `false` | If `true`, do not allow duplicate keys for the same post |
 
-The```unique```flag allows you to declare whether this key should be unique. Anonunique key is something a post can have multiple variations of, like price.
-If you only ever wantoneprice for a post, you should flag it```unique```and the```meta_key```will have one value only.
+### update_post_meta() Parameters
 
-## Updating Metadata
+| Parameter | Type | Required | Default | Description |
+|-----------|------|----------|---------|-------------|
+| `$post_id` | int | Yes | — | ID of the post |
+| `$meta_key` | string | Yes | — | The key to update |
+| `$meta_value` | mixed | Yes | — | New value |
+| `$prev_value` | mixed | No | `''` | If set, only update if current value matches. Empty = update all matching entries. |
 
-If a key already exists and you want to update it, useupdate_post_meta(). If you use this function and the key doesNOTexist, then it will create it, as if you’d usedadd_post_meta().
+### get_post_meta() Parameters
 
-Similar toadd_post_meta(), the function accepts a```post_id```, a```meta_key```, and```meta_value```. It also accepts an optional```prev_value```– which, if specified, will cause the function to only update existing metadata entries with this value. If it isn’t provided, the function defaults to updating all entries.
+| Parameter | Type | Required | Default | Description |
+|-----------|------|----------|---------|-------------|
+| `$post_id` | int | Yes | — | ID of the post |
+| `$meta_key` | string | No | `''` | Specific key to retrieve. Empty = all keys for the post |
+| `$single` | bool | No | `false` | `true` = return single value; `false` = return array of values |
 
-## Deleting Metadata
+### Examples
 
-delete_post_meta()takes a```post_id```, a```meta_key```, and optionally```meta_value```. It does exactly what the name suggests.
+```php
+// Add a new meta entry
+add_post_meta( 123, '_myplugin_color', 'red', true );
 
-## Character Escaping
+// Update (creates if doesn't exist)
+update_post_meta( 123, '_myplugin_color', 'blue' );
 
-Post meta values are passed through thestripslashes()function upon being stored, so you will need to be careful when passing in values (such as JSON) that might include escaped characters.
+// Get single value
+$color = get_post_meta( 123, '_myplugin_color', true ); // Returns string 'blue'
 
-Consider the JSON value```{"key":"value with \"escaped quotes\""}```:
+// Get all values for a key (if multiple entries allowed)
+$values = get_post_meta( 123, '_myplugin_tags' ); // Returns array
 
-```python
-```$escaped_json = '{"key":"value with \"escaped quotes\""}';
-update_post_meta( $id, 'escaped_json', $escaped_json );
-$broken = get_post_meta( $id, 'escaped_json', true );
-/*
-$broken, after stripslashes(), ends up unparsable:
-{"key":"value with "escaped quotes""}
-*/```
-```
+// Get all meta keys and values
+$all_meta = get_post_meta( 123 );
 
-### Workaround
+// Delete specific entry
+delete_post_meta( 123, '_myplugin_color', 'blue' );
 
-By adding one more level of  escaping using the functionwp_slash()(introduced in WP 3.6), you can compensate for the call tostripslashes():
-
-```python
-```$escaped_json = '{"key":"value with \"escaped quotes\""}';
-update_post_meta( $id, 'double_escaped_json', wp_slash( $escaped_json ) );
-$fixed = get_post_meta( $id, 'double_escaped_json', true );
-/*
-$fixed, after stripslashes(), ends up as desired:
-{"key":"value with \"escaped quotes\""}
-*/```
+// Delete all entries with this key (regardless of value)
+delete_post_meta( 123, '_myplugin_color' );
 ```
 
 ## Hidden Custom Fields
 
-If you are a plugin or theme developer and you are planning to use custom fields to store parameters, it is important to note that WordPress will not show custom fields which have```meta_key```starting with an “_” (underscore) in the custom fields list on the post edit screen or when using thethe_meta()template function.
+Meta keys starting with an underscore (`_`) are hidden from the Custom Fields UI and `the_meta()` template tag:
 
-This can be useful in order to show these custom fields in an unusual way by using theadd_meta_box()function.
-
-The example below will add a unique custom field with the```meta_key```name ‘_color’ and the```meta_value```of ‘red’ but this custom field will not display in the post edit screen:
-
-```python
-```add_post_meta( 68, '_color', 'red', true );```
+```php
+add_post_meta( 123, '_myplugin_hidden', 'secret_value', true );
+// Not visible in Custom Fields box or via the_meta()
 ```
 
-### Hidden Arrays
+## Character Escaping (JSON)
 
-In addition, if the```meta_value```is an array, it will not be displayed on the page edit screen, even if you don’t prefix the```meta_key```name with an underscore.
+WordPress applies `stripslashes()` to meta values on storage. For JSON or escaped strings, use `wp_slash()`:
+
+```php
+$json = '{"key":"value with \"escaped quotes\""}';
+
+// WRONG — slashes are stripped on retrieval
+update_post_meta( $id, 'json', $json );
+
+// CORRECT — wp_slash() adds extra layer that survives stripslashes()
+update_post_meta( $id, 'json', wp_slash( $json ) );
+```
+
+## Meta Key Naming Conventions
+
+| Rule | Example | Reason |
+|------|---------|--------|
+| Prefix with plugin name | `myplugin_color` | Avoids collisions with other plugins |
+| Don't use `wp_` prefix | ❌ `wp_mykey` | Reserved by WordPress core |
+| Use underscore prefix for hidden keys | `_myplugin_color` | Hidden from Custom Fields UI |
+
+## When to Use Meta vs. Custom Tables
+
+| Approach | Best For | Example |
+|----------|----------|---------|
+| **Post Meta** | Simple key-value data, low volume | Theme options per post, custom fields |
+| **Custom Table** | Large datasets, relational queries, frequent reads | Statistics, logs, settings with many rows |
+
+> **Default:** Use `update_post_meta()` / `get_post_meta()` when possible. Only create custom tables for performance-critical or relational data (see `database/creating-tables-with-plugins.md`).

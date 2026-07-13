@@ -1,112 +1,99 @@
 # Using Settings API
 
-## Adding Settings
+## Registration Flow
 
-You must define a new setting usingregister_setting(), it will create an entry in the```{$wpdb->prefix}_options```table.
+All registration functions (`register_setting()`, `add_settings_section()`, `add_settings_field()`) must be called on the `admin_init` action hook.
 
-You can add new sections on existing pages usingadd_settings_section().
+### Step 1 — Register Setting
 
-You can add new fields to existing sections usingadd_settings_field().
-register_setting()as well as the mentioned```add_settings_*()```functions should all be added to the```admin_init```action hook.
-
-### Add a Setting
-
-```python
-
-```register_setting(    string $option_group,    string $option_name,    array $args = []);```
+```php
+register_setting( string $option_group, string $option_name, array $args = array() )
 ```
 
-Please refer to the Function Reference aboutregister_setting()for full explanation about the used parameters.
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `$option_group` | string | Group name (used by `settings_fields()` and `options.php`) |
+| `$option_name` | string | Database option key to store the value |
+| `$args` | array | Optional: `type`, `sanitize_callback`, `default`, `show_in_rest` |
 
-### Add a Section
+### Step 2 — Add Section
 
-```python
-
-```add_settings_section(    string $id,    string $title,    callable $callback,    string $page,    array $args = []);```
+```php
+add_settings_section( string $id, string $title, callable $callback, string $page, array $args = array() )
 ```
 
-Sections are the groups of settings you see on WordPress settings pages with a shared heading. In your plugin you can add new sections to existing settings pages rather than creating a whole new page. This makes your plugin simpler to maintain and creates fewer new pages for users to learn.
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `$id` | string | Unique section identifier (used in HTML `id`) |
+| `$title` | string | Section heading (use `__()` for i18n) |
+| `$callback` | callable | Function that outputs section description text |
+| `$page` | string | Settings page slug (e.g., `'reading'`, `'my-page'`) |
+| `$args` | array | Optional extra arguments passed to callback |
 
-Please refer to the Function Reference aboutadd_settings_section()for full explanation about the used parameters.
+### Step 3 — Add Field
 
-### Add a Field
-
-```python
-```add_settings_field(
-    string $id,
-    string $title,
-    callable $callback,
-    string $page,
-    string $section = 'default',
-    array $args = []
-);```
+```php
+add_settings_field( string $id, string $title, callable $callback, string $page, string $section = 'default', array $args = array() )
 ```
 
-Please refer to the Function Reference aboutadd_settings_field()for full explanation about the used parameters.
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `$id` | string | Unique field identifier (used in HTML `id`) |
+| `$title` | string | Field label |
+| `$callback` | callable | Function that outputs the form control |
+| `$page` | string | Settings page slug |
+| `$section` | string | Section to place field in (`'default'` if omitted) |
+| `$args` | array | Optional: `label_for`, `class`, custom keys passed to callback |
 
-### Example
+### Step 4 — Render the Page
 
-```python
-```function wporg_settings_init() {
-	// register a new setting for "reading" page
-	register_setting('reading', 'wporg_setting_name');
+```php
+// In your page callback function:
+settings_errors();                              // Display messages
+?>
+<form action="options.php" method="post">
+    <?php settings_fields( 'my_group' ); ?>     // Nonce + hidden fields
+    <?php do_settings_sections( 'my-page' ); ?>  // Render all sections/fields
+    <?php submit_button(); ?>
+</form>
+```
 
-	// register a new section in the "reading" page
-	add_settings_section(
-		'wporg_settings_section',
-		'WPOrg Settings Section', 'wporg_settings_section_callback',
-		'reading'
-	);
+## Complete Minimal Example
 
-	// register a new field in the "wporg_settings_section" section, inside the "reading" page
-	add_settings_field(
-		'wporg_settings_field',
-		'WPOrg Setting', 'wporg_settings_field_callback',
-		'reading',
-		'wporg_settings_section'
-	);
+```php
+add_action( 'admin_init', 'myplugin_register_settings' );
+
+function myplugin_register_settings() {
+    register_setting( 'myplugin_group', 'myplugin_option', array(
+        'sanitize_callback' => 'sanitize_text_field',
+    ) );
+
+    add_settings_section(
+        'myplugin_section',
+        __( 'My Plugin Settings', 'text-domain' ),
+        '__return_empty_string',  // No description text
+        'myplugin-page'
+    );
+
+    add_settings_field(
+        'myplugin_key',
+        __( 'API Key', 'text-domain' ),
+        'myplugin_render_api_key_field',
+        'myplugin-page',
+        'myplugin_section'
+    );
 }
 
-/**
- * register wporg_settings_init to the admin_init action hook
- */
-add_action('admin_init', 'wporg_settings_init');
-
-/**
- * callback functions
- */
-
-// section content cb
-function wporg_settings_section_callback() {
-	echo '<p>WPOrg Section Introduction.</p>';
+function myplugin_render_api_key_field() {
+    $value = get_option( 'myplugin_option' );
+    echo '<input type="text" name="myplugin_option" value="' . esc_attr( $value ) . '" />';
 }
-
-// field content cb
-function wporg_settings_field_callback() {
-	// get the value of the setting we've registered with register_setting()
-	$setting = get_option('wporg_setting_name');
-	// output the field
-	?>
-	<input type="text" name="wporg_setting_name" value="<?php echo isset( $setting ) ? esc_attr( $setting ) : ''; ?>">
-    <?php
-}```
 ```
 
 ## Getting Settings
 
-```python
-```get_option(
-    string $option,
-    mixed $default = false
-);```
+```php
+$value = get_option( 'my_plugin_option', 'default_value' );
 ```
 
-Getting settings is accomplished with theget_option()function.
-The function accepts two parameters: the name of the option and an optional default value for that option.
-
-### Example
-
-```python
-```// Get the value of the setting we've registered with register_setting()
-$setting = get_option('wporg_setting_name');```
-```
+> **Note:** `get_option()` returns `false` if the option doesn't exist. Always provide a default value.

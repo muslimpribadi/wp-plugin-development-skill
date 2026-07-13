@@ -1,55 +1,67 @@
 # Uninstall Methods
 
-Your plugin may need to do some clean-up when it is uninstalled from a site.
+When a user deletes a plugin (not just deactivates), use one of these methods to clean up data permanently.
 
-A plugin is considered uninstalled if a user has deactivated the plugin, and then clicks the delete link within the WordPress Admin.
+## Method 1: uninstall.php (Recommended)
 
-When your plugin is uninstalled, you’ll want to clear out any plugin options and/or settings specific to the plugin, and/or other database entities such as tables.
+Create `uninstall.php` in your plugin root. WordPress executes it automatically when the plugin is deleted.
 
-Less experienced developers sometimes make the mistake of using the deactivation hook for this purpose.
-
-This table illustrates the differences between deactivation and uninstall.ScenarioDeactivation HookUninstall HookFlush Cache/TempYesNoFlush PermalinksYesNoRemove Options from {$wpdb->prefix}_optionsNoYesRemove Tables fromwpdbNoYes
-
-## Method 1: register_uninstall_hook
-
-To set up an uninstall hook, use theregister_uninstall_hook()function:
-
-```python
-```register_uninstall_hook(
-	__FILE__,
-	'pluginprefix_function_to_run'
-);```
-```
-
-## Method 2: uninstall.php
-
-To use this method you need to create an```uninstall.php```file inside the root folder of your plugin. This magic file is run automatically when the users deletes the plugin.
-
-For example:```/plugin-name/uninstall.php```
-Always check for the constant```WP_UNINSTALL_PLUGIN```in```uninstall.php```before doing anything. This protects against direct access.
-
-The constant will be defined by WordPress during the```uninstall.php```invocation.
-
-The constant isNOTdefined when uninstall is performed byregister_uninstall_hook().
-
-Here is an example deleting option entries and dropping a database table:
-
-```python
-```// if uninstall.php is not called by WordPress, die
+```php
+// if uninstall.php is not called by WordPress, die
 if ( ! defined( 'WP_UNINSTALL_PLUGIN' ) ) {
     die;
 }
 
-$option_name = 'wporg_option';
+// Delete single-site options
+delete_option( 'myplugin_options' );
 
-delete_option( $option_name );
+// Delete site-wide options in Multisite
+delete_site_option( 'myplugin_options' );
 
-// for site options in Multisite
-delete_site_option( $option_name );
-
-// drop a custom database table
+// Drop custom database table
 global $wpdb;
-$wpdb->query( "DROP TABLE IF EXISTS {$wpdb->prefix}mytable" );```
+$wpdb->query( "DROP TABLE IF EXISTS {$wpdb->prefix}myplugin_table" );
 ```
 
-In Multisite, looping through all blogs to delete options can be very resource intensive.
+> **Note:** `WP_UNINSTALL_PLUGIN` is defined only when uninstall.php runs directly. It is NOT defined when using `register_uninstall_hook()`.
+
+## Method 2: register_uninstall_hook()
+
+For multisite-compatible cleanup or programmatic control:
+
+```php
+register_uninstall_hook( __FILE__, 'myplugin_uninstall' );
+
+function myplugin_uninstall() {
+    delete_option( 'myplugin_options' );
+    // Note: $wpdb->query() won't work in multisite without switching blogs
+}
+```
+
+> **Note:** `register_uninstall_hook()` is NOT supported for network-activated plugins. Use `uninstall.php` for multisite.
+
+## Deactivation vs Uninstall
+
+| Action | Deactivation Hook | Uninstall Hook / uninstall.php |
+|--------|-------------------|-------------------------------|
+| Flush cache/temp files | ✅ Yes | ❌ No |
+| Flush permalinks | ✅ Yes | ❌ No |
+| Remove options from `{$wpdb->prefix}_options` | ❌ No | ✅ Yes |
+| Drop custom database tables | ❌ No | ✅ Yes |
+
+## Multisite Considerations
+
+Looping through all sites in a multisite network is resource-intensive:
+
+```php
+if ( is_multisite() ) {
+    $blogs = get_sites();
+    foreach ( $blogs as $blog ) {
+        switch_to_blog( $blog->blog_id );
+        delete_option( 'myplugin_options' );
+        restore_current_blog();
+    }
+}
+```
+
+> **Warning:** Only loop through sites if absolutely necessary. Consider deleting data only for the current site or using a batch process.

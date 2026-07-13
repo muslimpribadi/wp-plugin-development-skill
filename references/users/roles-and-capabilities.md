@@ -1,169 +1,90 @@
 # Roles and Capabilities
 
-- Get Role
-- User Can
-- Current User Can
-- Example
-- Multisite
-- Reference
+Roles define sets of capabilities for a user. WordPress stores them in the `{$wpdb->prefix}_options` table under the `user_roles` key.
 
-Roles and capabilities are two important aspects of WordPress that allow you to control user privileges.
+## Built-in Roles
 
-WordPress stores the Roles and their Capabilities in the```options```table under the```user_roles```key.
+| Role | Description |
+|------|-------------|
+| `super_admin` | Network-level administrator (multisite) |
+| `administrator` | Full site administration |
+| `editor` | Manage and publish posts, including other users' posts |
+| `author` | Publish and manage own posts |
+| `contributor` | Write and manage own posts but cannot publish |
+| `subscriber` | Read only, no publishing |
 
-## Roles
+## Functions — Role Management
 
-A role defines a set of capabilities for a user. For example, what the user may see and do in his dashboard.
+| Function | Purpose | Signature |
+|----------|---------|-----------|
+| `add_role()` | Register a new role | `add_role( string $role, string $name, array $capabilities )` |
+| `remove_role()` | Delete an existing role | `remove_role( string $role )` |
+| `get_role()` | Get a role object | `get_role( string $role )` → `WP_Role` instance |
+| `add_cap()` | Add capability to a role | `$role->add_cap( string $cap, bool $grant = true )` |
+| `remove_cap()` | Remove capability from a role | `$role->remove_cap( string $cap )` |
 
-By default, WordPress have six roles:
+## Role Object Methods
 
-- Super Admin
-- Administrator
-- Editor
-- Author
-- Contributor
-- Subscriber
+```php
+$role = get_role( 'author' );
 
-More roles can be added and the default roles can be removed.
+// Add a capability
+$role->add_cap( 'edit_others_posts', true );
 
-### Adding Roles
+// Remove a capability
+$role->remove_cap( 'delete_posts' );
 
-Add new roles and assign capabilities to them withadd_role().
+// Get all capabilities
+$capabilities = $role->capabilities;  // Array of cap => bool
+```
 
-```python
-```function wporg_simple_role() {
-	add_role(
-		'simple_role',
-		'Simple Role',
-		array(
-			'read'         => true,
-			'edit_posts'   => true,
-			'upload_files' => true,
-		),
-	);
+## Capability Check Functions
+
+| Function | Purpose | Signature |
+|----------|---------|-----------|
+| `current_user_can()` | Check current user's capability | `current_user_can( string $cap, mixed ...$args )` |
+| `user_can()` | Check any user's capability | `user_can( int\|WP_User $user, string $cap, mixed ...$args )` |
+| `current_user_can_for_blog()` | Multisite: check on specific blog | `current_user_can_for_blog( int $blog_id, string $cap )` |
+
+> **Note:** `$args` (third argument) can pass an object ID for context-aware capability checks (e.g., post-specific permissions).
+
+## Adding a Custom Role — Example
+
+```php
+add_action( 'init', 'myplugin_add_custom_role' );
+
+function myplugin_add_custom_role() {
+    add_role(
+        'content_reviewer',
+        __( 'Content Reviewer', 'text-domain' ),
+        array(
+            'read'         => true,
+            'edit_posts'   => true,
+            'upload_files' => true,
+            'read_private_posts' => true,
+        )
+    );
 }
-
-// Add the simple_role.
-add_action( 'init', 'wporg_simple_role' );```
 ```
 
-After the first call toadd_role(), the Role and it’s Capabilities will be stored in the database!
+> **Warning:** After the first `add_role()` call, the role is stored in the database. Subsequent calls do nothing — they won't alter capabilities. To modify a role: `remove_role()` then `add_role()` again. Only do this if capabilities actually differ to avoid performance degradation.
 
-Sequential calls will do nothing: including altering the capabilities list, which might not be the behavior that you’re expecting.
+## Modifying an Existing Role
 
-To alter the capabilities list in bulk: remove the role usingremove_role()and add it again usingadd_role()with the new capabilities.
+```php
+// Must run AFTER initial add_role() (higher priority)
+add_action( 'init', 'myplugin_modify_role_caps', 11 );
 
-Make sure to do it only if the capabilities differ from what you’re expecting (i.e. condition this) or you’ll degrade performance considerably!
-
-### Removing Roles
-
-Remove roles withremove_role().
-
-```python
-```function wporg_simple_role_remove() {
-	remove_role( 'simple_role' );
+function myplugin_modify_role_caps() {
+    $role = get_role( 'content_reviewer' );
+    $role->add_cap( 'edit_others_posts' );
 }
-
-// Remove the simple_role.
-add_action( 'init', 'wporg_simple_role_remove' );```
 ```
 
-After the first call toremove_role(), the Role and it’s Capabilities will be removed from the database!
+## Key Notes
 
-Sequential calls will do nothing.
-
-If you’re removing the default roles:
-
-- We adviseagainstremoving the Administrator and Super Admin roles!
-- Make sure to keep the code in your plugin/theme as future WordPress updates may add these roles again.
-- Run
-```update_option('default_role', YOUR_NEW_DEFAULT_ROLE)```
-since you’ll be deleting```subscriber```which is WP’s default role.
-
-## Capabilities
-
-Capabilities define what arolecan and can not do: edit posts, publish posts, etc.
-Custom post types can require a certain set of Capabilities.
-
-### Adding Capabilities
-
-You may define new capabilities for a role.
-
-Useget_role()to get the role object, then use the```add_cap()```method of that object to add a new capability.
-
-```python
-```function wporg_simple_role_caps() {
-	// Gets the simple_role role object.
-	$role = get_role( 'simple_role' );
-
-	// Add a new capability.
-	$role->add_cap( 'edit_others_posts', true );
-}
-
-// Add simple_role capabilities, priority must be after the initial role definition.
-add_action( 'init', 'wporg_simple_role_caps', 11 );```
-```
-
-It’s possible to add custom capabilities to any role.
-
-Under the default WordPress admin, they would have no effect, but they can be used for custom admin screen and front-end areas.
-
-### Removing Capabilities
-
-You may remove capabilities from a role.
-
-The implementation is similar to Adding Capabilities with the difference being the use of```remove_cap()```method for the role object.
-
-## Using Roles and Capabilities
-
-### Get Role
-
-Get the role object including all of it’s capabilities withget_role().
-
-```python
-```get_role( $role );```
-```
-
-### User Can
-
-Check if a user have a specifiedroleorcapabilitywithuser_can().
-
-```python
-```user_can( $user, $capability );```
-```
-
-There is an undocumented, third argument, $args, that may include the object against which the test should be performed.
-
-E.g. Pass a post ID to test for the capability of that specific post.
-
-### Current User Can
-
-current_user_can()is a wrapper function foruser_can()using the current user object as the```$user```parameter.
-
-Use this in scenarios where back-end and front-end areas should require a certain level of privileges to access and/or modify.
-
-```python
-```current_user_can( $capability );```
-```
-
-### Example
-
-Here’s a practical example of adding an Edit link on the in a template file if the user has the proper capability:
-
-```python
-```if ( current_user_can( 'edit_posts' ) ) {
-	edit_post_link( esc_html__( 'Edit', 'wporg' ), '<p>', '</p>' );
-}```
-```
-
-## Multisite
-
-Thecurrent_user_can_for_blog()function is used to test if the current user has a certainroleorcapabilityon a specific blog.
-
-```python
-```current_user_can_for_blog( $blog_id, $capability );```
-```
-
-## Reference
-
-Codex Reference forUser Roles and Capabilities.
+| Consideration | Detail |
+|---------------|--------|
+| Multisite default role | If removing the `subscriber` role, run `update_option('default_role', 'new_role')` |
+| Never remove admin/super_admin | Core may re-add these in future updates; removing breaks functionality |
+| Capabilities without UI | Custom capabilities have no effect on the default admin dashboard but can be checked programmatically for custom areas |

@@ -1,56 +1,104 @@
 # Working with Custom Post Types
 
-## Custom Post Type Templates
+## Template Files
 
-You can create customtemplatesfor your custom post types. In the same way posts and their archives can be displayed using```single.php```and```archive.php```, you can create the templates:
+WordPress uses template hierarchy for custom post types. Create these files in your theme:
 
-- ```single-{post_type}.php```– for single posts of a custom post type
-- ```archive-{post_type}.php```– for the archive
+| Template | Use Case |
+|----------|----------|
+| `single-{post_type}.php` | Single post view |
+| `archive-{post_type}.php` | Archive listing |
+| `taxonomy-{taxonomy}.php` | Custom taxonomy term archive |
 
-Where```{post_type}```is the post type identifier, used as the```$post_type```argument of the```register_post_type()```function.
+**Example:** For CPT slug `product`, create `single-product.php` and `archive-product.php`.
 
-Building upon what we’ve learned previously, you could create```single-wporg_product.php```and```archive-wporg_product.php```template files for single product posts and the archive.
+### Conditional Check
 
-Alternatively, you can use theis_post_type_archive()function in any template file to check if the query shows an archive page of a given post type, and thepost_type_archive_title()function to display the post type title.
+```php
+is_post_type_archive( 'product' );   // Returns true on product archive page
+post_type_archive_title();           // Echoes/archive title of the current post type archive
+```
 
 ## Querying by Post Type
 
-You can query posts of a specific type by passing the```post_type```key in the arguments array of the```WP_Query```class constructor.
+Use `WP_Query` with the `post_type` parameter:
 
-```python
-```<?php
+```php
 $args = array(
-	'post_type'      => 'product',
-	'posts_per_page' => 10,
+    'post_type'      => 'product',
+    'posts_per_page' => 10,
 );
-$loop = new WP_Query($args);
-while ( $loop->have_posts() ) {
-	$loop->the_post();
-	?>
-	<div class="entry-content">
-		<?php the_title(); ?>
-		<?php the_content(); ?>
-	</div>
-	<?php
-}```
+$loop = new WP_Query( $args );
+
+if ( $loop->have_posts() ) {
+    while ( $loop->have_posts() ) {
+        $loop->the_post();
+        ?>
+        <div class="entry-content">
+            <?php the_title(); ?>
+            <?php the_content(); ?>
+        </div>
+        <?php
+    }
+    wp_reset_postdata();
+}
 ```
 
-This loops through the latest ten product posts and displays the title and content of them one by one.
+### Query Multiple Post Types
+
+```php
+$args = array(
+    'post_type'      => array( 'product', 'service' ),
+    'posts_per_page' => 20,
+);
+```
 
 ## Altering the Main Query
 
-Registering a custom post type does not mean it gets added to the main query automatically.
+Use `pre_get_posts` to modify queries before they run. This is more efficient than multiple `WP_Query` calls.
 
-If you want your custom post type posts to show up on standard archives or include them on your home page mixed up with other post types, use the```pre_get_posts```action hook.
+```php
+add_action( 'pre_get_posts', 'myplugin_add_cpts_to_home' );
 
-The next example will show posts from```post```,```page```and```movie```post types on the home page:
-
-```python
-```function wporg_add_custom_post_types($query) {
-	if ( is_home() && $query->is_main_query() ) {
-		$query->set( 'post_type', array( 'post', 'page', 'movie' ) );
-	}
-	return $query;
+function myplugin_add_cpts_to_home( $query ) {
+    if ( is_home() && $query->is_main_query() ) {
+        $query->set( 'post_type', array( 'post', 'page', 'product' ) );
+    }
 }
-add_action('pre_get_posts', 'wporg_add_custom_post_types');```
 ```
+
+### Key Conditions for `pre_get_posts`
+
+| Condition | Purpose |
+|-----------|---------|
+| `$query->is_main_query()` | Ensure you're modifying the primary query, not a sidebar/widget query |
+| `is_home()` | Target the blog posts page |
+| `is_admin()` | Admin area queries (use sparingly) |
+| `! is_admin()` | Frontend only |
+
+### Exclude Post Types from Main Query
+
+```php
+add_action( 'pre_get_posts', 'myplugin_exclude_cpts' );
+
+function myplugin_exclude_cpts( $query ) {
+    if ( ! is_admin() && $query->is_main_query() && is_home() ) {
+        $query->set( 'post_type', array( 'post' ) );
+    }
+}
+```
+
+## Template Hierarchy Order
+
+When WordPress renders a custom post type template, it checks in this order:
+
+**Single post:**
+1. `single-{post_type}.php`
+2. `single.php`
+3. `singular.php`
+4. `index.php`
+
+**Archive:**
+1. `archive-{post_type}.php`
+2. `archive.php`
+3. `index.php`

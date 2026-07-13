@@ -1,46 +1,103 @@
-# jQuery
+# jQuery in WordPress
 
-## Using jQuery
+## NoConflict Mode
 
-Your jQuery script runs on the user’s browser after your WordPress webpage is received. A basic jQuery statement has two parts: a selector that determines which HTML elements the code applies to, and an action or event, which determines what the code does or what it reacts to. The basic event statement looks like this:
+WordPress loads jQuery in `noConflict()` mode. Always use the full `jQuery` name or pass `$` as a parameter:
 
-```python
-```jQuery.(selector).event(function);```
+```javascript
+// WRONG — $ is not available globally
+$(document).ready(function() { ... });
+
+// CORRECT — wrapper pattern
+jQuery(document).ready(function($) {
+    // $ is available inside this scope
+    $(".my-class").hide();
+});
+
+// ALTERNATIVE — shorthand (not recommended for readability)
+(function($) {
+    $(".my-class").hide();
+})(jQuery);
 ```
 
-When an event, such as a mouse click, occurs in an HTML element selected by the selector, the function that is defined inside the final set of parentheses is executed.
+## Common Selectors
 
-All the following code examples are based on this HTML page content. Assume it appears on your plugin’s admin settings screen, defined by the file```myplugin_settings.php```. It is a simple table with radio buttons next to each title.
+| Selector | Example | Purpose |
+|----------|---------|---------|
+| Class | `$(".classname")` | Elements with class |
+| ID | `$("#idname")` | Single element with ID |
+| Tag | `$("p")` | All paragraph elements |
+| Attribute | `$("[data-field='value']")` | Elements with specific attribute |
 
-```python
-```<form id="radioform">
-	<table>
-		<tbody>
-		<tr>
-			<td><input class="pref" checked="checked" name="book" type="radio" value="Sycamore Row" />Sycamore Row</td>
-			<td>John Grisham</td>
-		</tr>
-		<tr>
-			<td><input class="pref" name="book" type="radio" value="Dark Witch" />Dark Witch</td>
-			<td>Nora Roberts</td>
-		</tr>
-		</tbody>
-	</table>
-</form>```
+## Common Events
+
+| Event | Triggered By | Example |
+|-------|-------------|---------|
+| `click` | Mouse click | `$(".btn").click(function() { ... })` |
+| `change` | Input value changes | `$("input").change(function() { ... })` |
+| `submit` | Form submission | `$("#form").submit(function(e) { e.preventDefault(); ... })` |
+| `keyup` | Key pressed and released | `$("input").keyup(function() { ... })` |
+| `ready` | DOM fully loaded | `jQuery(document).ready(function($) { ... })` |
+
+## AJAX with jQuery
+
+### $.post() — Simple POST Request
+
+```javascript
+$.post( url, data, callback, dataType )
 ```
 
-The output could look something like this on your settings page.
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `url` | string | Yes | Endpoint URL (use `my_ajax_obj.ajax_url`) |
+| `data` | object | Yes | Key-value pairs sent to server |
+| `callback` | function | No | Function receiving response data |
+| `dataType` | string | No | Expected response type (`'json'`, `'html'`, etc.) |
 
-In thearticle on AJAX, we will build an AJAX exchange that saves the user selection in usermeta and adds the number of posts tagged with the selected title. Not a very practical application, but it illustrates all the important steps. jQuery code can either reside in an external file or be output to the page inside a<script>block. We will focus on the external file variation because passing values from PHP requires special attention. The same code can be output to the page if that seems more expedient to you.
-
-#### Selector and Event
-
-The selector is the same form as CSS selectors:".class"or"#id". There’s manymore forms, but these are the two you will frequently use. In our example, we will use class".pref". There’s also a slew of possibleevents, one you will likely use a lot is‘click’. In our example we will use‘change’to capture a radio button selection. Be aware that jQuery events are often named somewhat differently than those with JavaScript. So far, after we add in an empty anonymous function, our example statement looks like this:
-
-```python
-```$.(".pref").change(function(){
-	/*do stuff*/
-});```
+```javascript
+$.post(my_ajax_obj.ajax_url, {
+    _ajax_nonce: my_ajax_obj.nonce,
+    action: "my_action",
+    field: $("#input").val()
+}, function(response) {
+    $(".result").html(response);
+});
 ```
 
-This code will “do stuff” when any element of the “pref” class changes.Note:This code snippet, and all examples on this page, are for illustrating the use of AJAX. The code is not suitable for production environments because related operations such assanitization,security,error handling, andinternationalizationhave been intentionally omitted. Be sure to always address these important operations in your production code.
+### $.ajax() — Full Control
+
+```javascript
+$.ajax({
+    url: my_ajax_obj.ajax_url,
+    type: 'POST',
+    data: {
+        _ajax_nonce: my_ajax_obj.nonce,
+        action: 'my_action',
+        value: $('#input').val()
+    },
+    success: function(response) {
+        // Handle success
+    },
+    error: function(xhr, status, error) {
+        // Handle error
+    }
+});
+```
+
+## Variable Scope in Closures
+
+When using jQuery callbacks, `this` refers to the callback element, not the original trigger. Store it first:
+
+```javascript
+$(".pref").change(function() {
+    var self = this;  // Preserve reference to original element
+    $.post(my_ajax_obj.ajax_url, {
+        action: 'my_action',
+        value: $(this).val()
+    }, function(response) {
+        // $() here refers to callback context
+        // Use self for the original trigger element
+        $(self).after(response);
+    });
+});
+```

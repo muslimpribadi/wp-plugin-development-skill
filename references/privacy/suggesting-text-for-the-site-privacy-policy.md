@@ -1,51 +1,64 @@
-# Suggesting text for the site privacy policy
+# Suggesting Text for the Site Privacy Policy
 
-Every plugin that collects, uses, or stores user data, or passes it to an external source or third party, should add a section of suggested text to the privacy policy postbox. This is best done with``` wp_add_privacy_policy_content( $plugin_name, $policy_text )```. This will allow site administrators to pull that information into their site’s privacy policy.
+Use `wp_add_privacy_policy_content()` to provide suggested text for the privacy policy postbox. Called during `admin_init`.
 
-To make this simpler for the users, the text should address the questions provided in the default privacy policy:
+## Function Signature
 
-- What personal data we collect and why we collect it
-
-- Their own manually input information
-- WP: Contact forms
-- WP: Comments
-- WP: Cookies
-- WP: Third party embeds
-- Analytics
-
-- Who we share your data with
-- How long we retain your data
-- What rights you have over your data
-- Where we send your data
-- Your contact information
-- How we protect your data
-- What data breach procedures we have in place
-- What third parties we receive data from
-- What automated decision making and/or profiling we do with user data
-- Any industry regulatory disclosure requirements
-
-While not all of these questions will be applicable to all plugins, we recommend taking care with the sections on data sharing.
-
-## Code Example
-
-It is recommended to call wp_add_privacy_policy_content during the admin_init action. Calling it outside of an action hook can lead to problems, see ticket #44142 for details.Supplemental information can be provided through the use of the specialized```.privacy-policy-tutorial```CSS class. Any content contained within HTML elements that have this CSS class applied will be omitted from the clipboard when the section content is copied.
-
-```python
-```/**
- * Adds a privacy policy statement.
- */
-function wporg_add_privacy_policy_content() {
-	if ( ! function_exists( 'wp_add_privacy_policy_content' ) ) {
-		return;
-	}
-	$content = '<p class="privacy-policy-tutorial">' . __( 'Some introductory content for the suggested text.', 'text-domain' ) . '</p>'
-			. '<strong class="privacy-policy-tutorial">' . __( 'Suggested Text:', 'my_plugin_textdomain' ) . '</strong> '
-			. sprintf(
-				__( 'When you leave a comment on this site, we send your name, email address, IP address and comment text to example.com. Example.com does not retain your personal data. The example.com privacy policy is <a href="%1$s" target="_blank">here</a>.', 'text-domain' ),
-				'https://example.com/privacy-policy'
-			);
-	wp_add_privacy_policy_content( 'Example Plugin', wp_kses_post( wpautop( $content, false ) ) );
-}
-
-add_action( 'admin_init', 'wporg_add_privacy_policy_content' );```
+```php
+wp_add_privacy_policy_content( string $plugin_name, string $policy_text )
 ```
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `$plugin_name` | string | Yes | Plugin name (shown in the policy postbox) |
+| `$policy_text` | string | Yes | HTML content with suggested privacy text |
+
+## Complete Example
+
+```php
+add_action( 'admin_init', 'myplugin_add_privacy_policy_content' );
+
+function myplugin_add_privacy_policy_content() {
+    if ( ! function_exists( 'wp_add_privacy_policy_content' ) ) {
+        return;
+    }
+
+    $content = '<p class="privacy-policy-tutorial">'
+        . __( 'Some introductory content for the suggested text.', 'text-domain' )
+        . '</p>'
+        . '<strong class="privacy-policy-tutorial">'
+        . __( 'Suggested Text:', 'my_plugin_textdomain' )
+        . '</strong> '
+        . sprintf(
+            __( 'When you leave a comment on this site, we send your name, email address, IP address and comment text to example.com. Example.com does not retain your personal data. The example.com privacy policy is <a href="%1$s" target="_blank">here</a>.', 'text-domain' ),
+            'https://example.com/privacy-policy'
+        );
+
+    wp_add_privacy_policy_content( 'Example Plugin', wp_kses_post( wpautop( $content, false ) ) );
+}
+```
+
+## Tutorial CSS Class
+
+Use `.privacy-policy-tutorial` class for instructional text that is **omitted** when the section is copied to the clipboard:
+
+```php
+// This text appears in the postbox but NOT in the exported policy
+'<p class="privacy-policy-tutorial">' . __( 'Introductory context here', 'text-domain' ) . '</p>';
+
+// This text appears in both the postbox AND the exported policy
+'<strong>' . __( 'Suggested Text:', 'text-domain' ) . '</strong> Actual privacy text...';
+```
+
+## Applicable Questions to Address
+
+| Question | Description |
+|----------|-------------|
+| What personal data we collect and why | Fields collected, purpose of collection |
+| Who we share your data with | Third-party services, partners |
+| How long we retain your data | Retention periods |
+| What rights you have over your data | Access, correction, deletion requests |
+| Where we send your data | Server locations, cross-border transfers |
+| What automated decision making we do | Profiling, automated processing |
+
+> **Note:** Call `wp_add_privacy_policy_content()` during `admin_init`. Calling outside a hook can cause issues.

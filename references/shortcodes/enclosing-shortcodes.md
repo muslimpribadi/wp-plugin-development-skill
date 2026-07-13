@@ -1,74 +1,64 @@
 # Enclosing Shortcodes
 
-The are two scenarios for using shortcodes:
+Enclosing shortcodes wrap content that the callback can manipulate.
 
-- The shortcode is a self-closing tag like we seen in theBasic Shortcodessection.
-- The shortcode is enclosing content.
+## Syntax
 
-## Enclosing Content
-
-Enclosing content with a shortcode allows manipulations on the enclosed content.
-
-```python
-```[wporg]content to manipulate[/wporg]```
+```
+[wporg]Content to manipulate[/wporg]
 ```
 
-As seen above, all you need to do in order to enclose a section of content is add a beginning```[$tag]```and an end```[/$tag]```, similar to HTML.
+The handler receives enclosed text in the `$content` parameter:
 
-## Processing Enclosed Content
-
-Lets get back to our original [wporg] shortcode code:
-
-```python
-```function wporg_shortcode( $atts = array(), $content = null ) {
-    // do something to $content
-    // always return
-    return $content;
+```php
+function wporg_shortcode( $atts = array(), $content = null ) {
+    // Process $content and return replacement
+    return '<div class="box">' . $content . '</div>';
 }
-add_shortcode( 'wporg', 'wporg_shortcode' );```
+add_shortcode( 'wporg', 'wporg_shortcode' );
 ```
 
-Looking at the callback function we see that we chose to accept two parameters,```$atts```and```$content```. The```$content```parameter is going to hold our enclosed content. We will talk about```$atts```later.
+## Enclosing Content Detection
 
-The default value of```$content```is set to```null```so we can differentiate between a self-closing tag and enclosing tags by using PHP functionis_null().
+The `$content` parameter defaults to `null` for self-closing tags. Use `is_null()` to differentiate:
 
-The shortcode```[$tag]```, including its content and the end```[/$tag]```will be replaced with thereturn valueof the handler function.
-It is the responsibility of the handler function tosecure the output.
-
-## Shortcode-ception
-
-The shortcode parser performs asingle passon the content of the post.
-
-This means that if the```$content```parameter of a shortcode handler contains another shortcode, it won’t be parsed. In this example,```[shortcode]```will not be processed:
-
-```python
-```[wporg]another [shortcode] is included[/wporg]```
-```
-
-Using shortcodes inside other shortcodes is possible by calling```do_shortcode()```on thefinal return valueof the handler function.
-
-```python
-
-```python
-
-```
-
-```function wporg_shortcode( $atts = array(), $content = null ) {
-	// do something to $content
-	// run shortcode parser recursively
-	$content = do_shortcode( $content );
-	// always return
-	return $content;
+```php
+function wporg_shortcode( $atts = array(), $content = null ) {
+    if ( ! is_null( $content ) ) {
+        // Enclosed content — manipulate it
+        return '<div class="box">' . esc_html( $content ) . '</div>';
+    } else {
+        // Self-closing tag [wporg]
+        return '<div class="box"></div>';
+    }
 }
-add_shortcode( 'wporg', 'wporg_shortcode' );```
+```
+
+## Shortcode-ception (Nested Shortcodes)
+
+The shortcode parser performs a **single pass**. Nested shortcodes in `$content` are not automatically parsed. Call `do_shortcode()` to re-parse:
+
+```php
+function wporg_shortcode( $atts = array(), $content = null ) {
+    if ( ! is_null( $content ) ) {
+        $content = do_shortcode( $content );  // Re-parse nested shortcodes
+    }
+    return '<div class="box">' . $content . '</div>';
+}
 ```
 
 ## Limitations
 
-The shortcode parser is unable to handle mixing of enclosing and non-enclosing forms of the same```[$tag]```.
+| Scenario | Behavior |
+|----------|----------|
+| `[wporg]text[/wporg]` | Standard enclosing — works correctly |
+| `[wporg]non-enclosed [wporg]enclosed[/wporg]` | Parser treats entire string as one enclosing shortcode: `"non-enclosed [wporg]enclosed"` |
+| Mixing same tag in self-closing + enclosing forms | **Not supported** — parser cannot distinguish |
 
-```python
-```[wporg] non-enclosed content [wporg]enclosed content[/wporg]```
-```
+## Key Notes
 
-Instead of being treated as two shortcodes separated by the text “```non-enclosed content```“, the parser treats this as a single shortcode enclosing “```non-enclosed content [wporg]enclosed content```“.
+| Consideration | Detail |
+|---------------|--------|
+| Security | Always escape output (`esc_html()`, `esc_attr()`) before returning |
+| Content filter | For post content, use `apply_filters( 'the_content', $content )` instead of `do_shortcode()` to apply full content pipeline |
+| Single pass | Nested shortcodes require explicit `do_shortcode()` calls in the handler |

@@ -1,81 +1,69 @@
 # Activation / Deactivation Hooks
 
-Activation and deactivation hooks provide ways to perform actions when plugins are activated or deactivated.
+## register_activation_hook()
 
-- Onactivation, plugins can run a routine to add rewrite rules, add custom database tables, or set default option values.
-- Ondeactivation, plugins can run a routine to remove temporary data such as cache and temp files and directories.
+Run code when a plugin is activated. Fires before any output is sent (safe for database operations, cache clearing).
 
-The deactivation hook is sometimes confused with theuninstall hook. The uninstall hook is best suited todelete all data permanentlysuch as deleting plugin options and custom tables, etc.
-
-## Activation
-
-To set up an activation hook, use theregister_activation_hook()function:
-
-```python
-```register_activation_hook(
-	__FILE__,
-	'pluginprefix_function_to_run'
-);```
+```php
+register_activation_hook( string $file, callable $callback )
 ```
 
-## Deactivation
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `$file` | string | Yes | Main plugin file path (usually `__FILE__`) |
+| `$callback` | callable | Yes | Function to run on activation |
 
-To set up a deactivation hook, use theregister_deactivation_hook()function:
+## register_deactivation_hook()
 
-```python
-```register_deactivation_hook(
-	__FILE__,
-	'pluginprefix_function_to_run'
-);```
+Run code when a plugin is deactivated. Fires before the plugin is removed from the active plugins list.
+
+```php
+register_deactivation_hook( string $file, callable $callback )
 ```
 
-The first parameter in each of these functions refers to your main plugin file, which is the file in which you have placed theplugin header comment. Usually these two functions will be triggered from within the main plugin file; however, if the functions are placed in any other file, you must update the first parameter to correctly point to the main plugin file.
+Same parameters as `register_activation_hook()`.
 
-## Example
+> **Note:** Deactivation hooks do NOT fire when deleting a plugin — use `uninstall.php` for that (see `uninstall-methods.md`).
 
-One of the most common uses for an activation hook is to refresh WordPress permalinks when a plugin registers a custom post type. This gets rid of the nasty 404 errors.
+## Example: CPT + Permalinks
 
-Let’s look at an example of how to do this:
+Most common pattern: register CPT on activation and flush rewrite rules.
 
-```python
-```/**
- * Register the "book" custom post type
- */
-function pluginprefix_setup_post_type() {
-	register_post_type( 'book', ['public' => true ] );
+```php
+add_action( 'init', 'myplugin_register_cpt' );
+
+function myplugin_register_cpt() {
+    register_post_type( 'book', array( 'public' => true ) );
 }
-add_action( 'init', 'pluginprefix_setup_post_type' );
 
-/**
- * Activate the plugin.
- */
-function pluginprefix_activate() {
-	// Trigger our function that registers the custom post type plugin.
-	pluginprefix_setup_post_type();
-	// Clear the permalinks after the post type has been registered.
-	flush_rewrite_rules();
+register_activation_hook( __FILE__, 'myplugin_activate' );
+
+function myplugin_activate() {
+    myplugin_register_cpt(); // Ensure CPT is registered before flushing rules
+    flush_rewrite_rules();
 }
-register_activation_hook( __FILE__, 'pluginprefix_activate' );```
+
+register_deactivation_hook( __FILE__, 'myplugin_deactivate' );
+
+function myplugin_deactivate() {
+    unregister_post_type( 'book' );
+    flush_rewrite_rules();
+}
 ```
 
-If you are unfamiliar with registering custom post types, don’t worry – this will be covered later. This example is used simply because it’s very common.
+## Common Activation Tasks
 
-Using the example from above, the following is how to reverse this process and deactivate a plugin:
+| Task | Function | Notes |
+|------|----------|-------|
+| Flush rewrite rules | `flush_rewrite_rules()` | Required after CPT/taxonomy registration |
+| Create database tables | `dbDelta()` | See `database/creating-tables-with-plugins.md` |
+| Set default options | `add_option()` / `update_option()` | Use `add_option()` to avoid overwriting existing values |
+| Register cron events | `wp_schedule_event()` | See `cron/scheduling-wp-cron-events.md` |
 
-```python
-```/**
- * Deactivation hook.
- */
-function pluginprefix_deactivate() {
-	// Unregister the post type, so the rules are no longer in memory.
-	unregister_post_type( 'book' );
-	// Clear the permalinks to remove our post type's rules from the database.
-	flush_rewrite_rules();
-}
-register_deactivation_hook( __FILE__, 'pluginprefix_deactivate' );```
-```
+## Common Deactivation Tasks
 
-For further information regarding activation and deactivation hooks, here are some excellent resources:
-
-- register_activation_hook()in the WordPress function reference.
-- register_deactivation_hook()in the WordPress function reference.
+| Task | Function | Notes |
+|------|----------|-------|
+| Flush rewrite rules | `flush_rewrite_rules()` | Remove CPT/taxonomy rules from cache |
+| Unschedule cron events | `wp_unschedule_event()` | See `cron/scheduling-wp-cron-events.md` |
+| Delete temp files | `unlink()`, `rmdir()` | Do NOT delete options/tables — use uninstall.php for that |

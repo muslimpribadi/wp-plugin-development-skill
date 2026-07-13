@@ -1,39 +1,80 @@
 # Basic Shortcodes
 
-## Add a Shortcode
+The Shortcode API allows registering custom tags that WordPress replaces with callback output.
 
-It is possible to add your own shortcodes by using the Shortcode API. The process involves registering a callback```$func```to a shortcode```$tag```using```add_shortcode()```.
+## register_shortcode()
 
-```python
-```add_shortcode(
-    string $tag,
-    callable $func
-);```
+```php
+add_shortcode( string $tag, callable $callback )
 ```
 
-```[wporg]```is your new shortcode. The use of the shortcode will trigger the```wporg_shortcode```callback function.
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `$tag` | string | The shortcode tag (e.g., `'wporg'`). Used in content as `[wporg]`. |
+| `$callback` | callable | Function that returns the replacement text. |
 
-```python
-```add_shortcode('wporg', 'wporg_shortcode');
-function wporg_shortcode( $atts = [], $content = null) {
-    // do something to $content
-    // always return
-    return $content;
-}```
+### Hook Timing
+
+Must be registered on the `init` action hook:
+
+```php
+add_action( 'init', 'myplugin_register_shortcodes' );
+
+function myplugin_register_shortcodes() {
+    add_shortcode( 'wporg', 'myplugin_wporg_handler' );
+}
+
+function myplugin_wporg_handler( $atts = array(), $content = null ) {
+    return '<p>WordPress.org</p>';
+}
 ```
 
-## Remove a Shortcode
+## remove_shortcode()
 
-It is possible to remove shortcodes by using the Shortcode API. The process involves removing a registered```$tag```usingremove_shortcode().
-
-```python
-```remove_shortcode(
-    string $tag
-);```
+```php
+remove_shortcode( string $tag )
 ```
 
-Make sure that the shortcode have been registered before attempting to remove. Specify a higher priority number foradd_action()or hook into an action hook that is run later.
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `$tag` | string | The shortcode tag to remove. Must match exactly. |
 
-## Check if a Shortcode Exists
+> **Note:** Ensure the shortcode has been registered before removing. Use a higher priority number in `add_action()` or hook into a later action.
 
-To check whether a shortcode has been registered use```shortcode_exists()```.
+## shortcode_exists()
+
+```php
+shortcode_exists( string $tag )
+```
+
+Returns `true` if the shortcode is registered, `false` otherwise.
+
+## Complete Example — Self-Closing Tag
+
+```php
+add_action( 'init', 'myplugin_register_shortcodes' );
+
+function myplugin_register_shortcodes() {
+    add_shortcode( 'wporg', 'myplugin_wporg_handler' );
+}
+
+function myplugin_wporg_handler( $atts = array(), $content = null ) {
+    return '<p>WordPress.org</p>';
+}
+
+// Remove a shortcode (e.g., from another plugin)
+remove_shortcode( 'wporg' );
+
+// Check if registered
+if ( shortcode_exists( 'wporg' ) ) {
+    // Do something
+}
+```
+
+## Key Notes
+
+| Consideration | Detail |
+|---------------|--------|
+| Return value | Callback must always `return` — never `echo` |
+| Hook timing | Register on `init`, not in plugin load |
+| Multiple shortcodes | Call `add_shortcode()` multiple times for different tags |

@@ -1,86 +1,119 @@
 # Registering Custom Post Types
 
-WordPress comes with five default post types:```post```,```page```,```attachment```,```revision```, and```menu```.
+Register a custom post type using `register_post_type()`. Must be called on the `init` hook (after `after_setup_theme`, before `admin_init`).
 
-While developing your plugin, you may need to create your own specific content type: for example, products for an e-commerce website, assignments for an e-learning website, or movies for a review website.
+## Basic Registration
 
-Using Custom Post Types, you can register your own post type. Once a custom post type is registered, it gets a new top-level administrative screen that can be used to manage and create posts of that type.
+```php
+add_action( 'init', 'myplugin_register_product_cpt' );
 
-To register a new post type, you use theregister_post_type()function.
-We recommend that you put custom post types in a plugin rather than a theme. This ensures that user content remains portable even if the theme is changed.
-
-The following minimal example registers a new post type, Products, which is identified in the database as```wporg_product```.
-
-```python
-```function wporg_custom_post_type() {
-	register_post_type('wporg_product',
-		array(
-			'labels'      => array(
-				'name'          => __('Products', 'textdomain'),
-				'singular_name' => __('Product', 'textdomain'),
-			),
-				'public'      => true,
-				'has_archive' => true,
-		)
-	);
+function myplugin_register_product_cpt() {
+    register_post_type( 'product', array(
+        'labels'      => array(
+            'name'          => __( 'Products', 'myplugin' ),
+            'singular_name' => __( 'Product', 'myplugin' ),
+        ),
+        'public'      => true,
+        'has_archive' => true,
+    ) );
 }
-add_action('init', 'wporg_custom_post_type');
-```
 ```
 
-Please visit the reference page forregister_post_type()for the description of arguments.
-You must call```register_post_type()```before the```admin_init```hook and after the```after_setup_theme```hook. A good hook to use is the```init```action hook.
+## register_post_type() Parameters
+
+```php
+register_post_type( string $post_type, array|string $args = array() )
+```
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `$post_type` | string | Yes | Machine-readable slug (max 20 chars). Must be lowercase, no spaces. Prefix to avoid conflicts (e.g., `myplugin_product`). |
+| `$args` | array | No | Configuration arguments (see below). |
+
+### Key Arguments
+
+| Argument | Type | Default | Description |
+|----------|------|---------|-------------|
+| `labels` | array | — | UI labels (`name`, `singular_name`, `add_new`, `edit_item`, etc.) |
+| `public` | bool | `false` | Makes CPT visible in admin, REST API, and frontend |
+| `has_archive` | bool/string | `false` | Enable archive page. String sets custom archive slug. |
+| `supports` | array | `['title', 'editor']` | Features: `'title'`, `'editor'`, `'excerpt'`, `'thumbnail'`, `'custom-fields'`, `'page-attributes'` |
+| `menu_icon` | string | — | Dashicon CSS (`dashicons-admin-post`) or image URL. Position in admin menu. |
+| `menu_position` | int | `null` | Menu order (see Menu Position Reference below) |
+| `show_in_rest` | bool | `false` | Enable Gutenberg REST API support |
+| `rewrite` | array\|bool | `true` | Permalink structure. `array('slug' => 'products')` or `false` to disable. |
+
+### Menu Position Reference
+
+| Position | Menu Item |
+|----------|-----------|
+| 5 | Dashboard |
+| 10 | Posts |
+| 15 | Media |
+| 20 | Pages |
+| 25 | Comments |
+| 59 | (separator) |
+| 60+ | First custom item |
 
 ## Naming Best Practices
 
-It is important that you prefix your post type functions and identifiers with a short prefix that corresponds to your plugin, theme, or website.
-Make sure your custom post type identifier does not exceed 20 charactersas the```post_type```column in the database is currently a VARCHAR field of that length.
+- **Max 20 characters** — `post_type` column in the database is VARCHAR(20)
+- **Prefix your slug** — use plugin/theme namespace (e.g., `myplugin_product`) to avoid conflicts
+- **Do not use `wp_` prefix** — reserved by WordPress core
+- **Avoid generic names** — `product`, `event`, `movie` are likely already used
 
-To ensure forward compatibility, do not usewp_as your identifier — it is being used by WordPress core.
+> **Conflict resolution:** Duplicate post type slugs cannot be resolved without disabling one of them. Always use a unique, prefixed name.
 
-If your identifier is too generic (for example: “```product```“), it may conflict with other plugins or themes that have chosen to use that same identifier.
+## Custom Permalink Slug
 
-Solving duplicate post type identifiers is not possible without disabling one of the conflicting post types.
+```php
+add_action( 'init', 'myplugin_register_product_cpt' );
 
-## URLs
-
-A custom post type gets its own slug within the site URL structure.
-
-A post of type```wporg_product```will use the following URL structure by default:```http://example.com/wporg_product/%product_name%```.
-
-```wporg_product```is the slug of your custom post type and```%product_name%```is the slug of your particular product.
-
-The final permalink would be:```http://example.com/wporg_product/wporg-is-awesome```.
-
-You can see the permalink on the edit screen for your custom post type, just like with default post types.
-
-### A Custom Slug for a Custom Post Type
-
-To set a custom slug for the slug of your custom post type all you need to do is add a key => value pair to the```rewrite```key in the```register_post_type()```arguments array.
-
-Example:
-
-```python
-```function wporg_custom_post_type() {
-	register_post_type('wporg_product',
-		array(
-			'labels'      => array(
-				'name'          => __( 'Products', 'textdomain' ),
-				'singular_name' => __( 'Product', 'textdomain' ),
-			),
-			'public'      => true,
-			'has_archive' => true,
-			'rewrite'     => array( 'slug' => 'products' ), // my custom slug
-		)
-	);
+function myplugin_register_product_cpt() {
+    register_post_type( 'product', array(
+        'labels'      => array(
+            'name'          => __( 'Products', 'myplugin' ),
+            'singular_name' => __( 'Product', 'myplugin' ),
+        ),
+        'public'      => true,
+        'has_archive' => true,
+        'rewrite'     => array( 'slug' => 'shop/products' ),
+    ) );
 }
-add_action('init', 'wporg_custom_post_type');
-```
 ```
 
-The above will result in the following URL structure:```http://example.com/products/%product_name%```
-Using a generic slug like```products```can potentially conflict with other plugins or themes, so try to use one that is more specific to your content.
+URL structure: `http://example.com/shop/products/product-slug/`
 
-Unlike the custom post type identifiers, the duplicate slug problem can be solved easily by changing the slug for one of the conflicting post types.
+> **Note:** After changing rewrite rules, flush permalinks by visiting Settings → Permalinks.
 
-If the plugin author included an```apply_filters()```call on the arguments, this can be done programmatically by overriding the arguments submitted via the```register_post_type()```function.
+## Complete Example with All Common Options
+
+```php
+add_action( 'init', 'myplugin_register_product_cpt' );
+
+function myplugin_register_product_cpt() {
+    $labels = array(
+        'name'               => __( 'Products', 'myplugin' ),
+        'singular_name'      => __( 'Product', 'myplugin' ),
+        'add_new'            => __( 'Add New', 'myplugin' ),
+        'add_new_item'       => __( 'Add New Product', 'myplugin' ),
+        'edit_item'          => __( 'Edit Product', 'myplugin' ),
+        'new_item'           => __( 'New Product', 'myplugin' ),
+        'view_item'          => __( 'View Product', 'myplugin' ),
+        'search_items'       => __( 'Search Products', 'myplugin' ),
+        'not_found'          => __( 'No products found.', 'myplugin' ),
+        'not_found_in_trash' => __( 'No products found in trash.', 'myplugin' ),
+    );
+
+    register_post_type( 'product', array(
+        'labels'          => $labels,
+        'public'          => true,
+        'has_archive'     => true,
+        'supports'        => array( 'title', 'editor', 'excerpt', 'thumbnail' ),
+        'menu_icon'       => 'dashicons-cart',
+        'menu_position'   => 20,
+        'show_in_rest'    => true,
+        'rewrite'         => array( 'slug' => 'shop/products' ),
+    ) );
+}
+```

@@ -1,53 +1,67 @@
 # Filters
 
-Filtersare one of the two types ofHooks.
+Filters modify data during execution. Callbacks must return a value and should never have side effects (no echo, no global variable mutation).
 
-They provide a way for functions to modify data during the execution of WordPress Core, plugins, and themes. They are the counterpart toActions.
+## add_filter()
 
-UnlikeActions, filters are meant to work in an isolated manner, and should never haveside effectssuch as affecting global variables and output. Filters expect to have something returned back to them.
-
-## Add Filter
-
-The process of adding a filter includes two steps.
-
-First, you need to create a Callback function which will be called when the filter is run. Second, you need to add your Callback function to a hook which will perform the calling of the function.
-
-You will use theadd_filter()function, passing at least two parameters:
-
-- ```string $hook_name```which is the name of the filter you’re hooking to, and
-- ```callable $callback```the name of your callback function.
-
-The example below will run when the```the_title```filter is executed.
-
-```python
-```function wporg_filter_title( $title ) {
-	return 'The ' . $title . ' was filtered';
-}
-add_filter( 'the_title', 'wporg_filter_title' );```
+```php
+add_filter( string $hook_name, callable $callback, int $priority = 10, int $accepted_args = 1 )
 ```
 
-Lets say we have a post title, “Learning WordPress”, the above example will modify it to be “The Learning WordPress was filtered”.
-
-You can refer to theHookschapter for a list of available hooks.
-
-As you gain more experience, looking through WordPress Core source code will allow you to find the most appropriate hook.
-
-### Additional Parameters
-
-add_filter()can accept two additional parameters,```int $priority```for the priority given to the callback function, and```int $accepted_args```for the number of arguments that will be passed to the callback function.
-
-For detailed explanation of these parameters please read the article onActions.
+| Parameter | Type | Required | Default | Description |
+|-----------|------|----------|---------|-------------|
+| `$hook_name` | string | Yes | — | Name of the filter hook |
+| `$callback` | callable | Yes | — | Function that receives and returns modified data |
+| `$priority` | int | No | 10 | Execution order (same as `add_action`) |
+| `$accepted_args` | int | No | 1 | Number of arguments passed to callback |
 
 ### Example
 
-To add a CSS class to the```<body>```tag when a certain condition is met:
+```php
+add_filter( 'the_title', 'myplugin_prefix_title' );
 
-```python
-```function wporg_css_body_class( $classes ) {
-	if ( ! is_admin() ) {
-		$classes[] = 'wporg-is-awesome';
-	}
-	return $classes;
+function myplugin_prefix_title( $title ) {
+    return 'Featured: ' . $title;
 }
-add_filter( 'body_class', 'wporg_css_body_class' );```
 ```
+
+### Modifying Arrays
+
+```php
+add_filter( 'body_class', 'myplugin_add_body_class' );
+
+function myplugin_add_body_class( $classes ) {
+    if ( ! is_admin() ) {
+        $classes[] = 'myplugin-theme';
+    }
+    return $classes;
+}
+```
+
+> **Note:** Filters must always return the modified value. Forgetting `return` causes data loss.
+
+## apply_filters()
+
+Apply a filter to modify a value.
+
+```php
+apply_filters( string $hook_name, mixed $value, mixed ...$args )
+```
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `$hook_name` | string | Yes | Name of the filter hook |
+| `$value` | mixed | Yes | The value to be modified by callbacks |
+| `...$args` | mixed | No | Additional arguments passed to callbacks |
+
+### Example
+
+```php
+$output = apply_filters( 'myplugin_settings', $settings );
+
+$post_type_args = array( /* ... */ );
+$post_type_args = apply_filters( 'myplugin_post_type_args', $post_type_args );
+register_post_type( 'custom_type', $post_type_args );
+```
+
+> **Note:** The first argument after `$hook_name` is always the value being filtered. Additional args follow for context.

@@ -1,13 +1,23 @@
 # Including a Software License
 
-Most WordPress plugins are released under theGPL, which is the same license thatWordPress itself uses. However, there are other compatible options available. It is always best to clearly indicate the license your plugin uses.
+WordPress plugins are typically released under GPL. Include the license in your plugin header and optionally add a license block comment.
 
-In theHeader Requirementssection, we briefly mentioned how you can indicate your plugin’s license within the plugin header comment. Another common, and encouraged, practice is to place a license block comment near the top of your main plugin file (the same one that has the plugin header comment).
+## Header Field
 
-This license block comment usually looks something like this:
+```php
+/*
+ * Plugin Name:       My Plugin
+ * License:           GPL v2 or later
+ * License URI:       https://www.gnu.org/licenses/gpl-2.0.html
+ */
+```
 
-```python
-```/*
+## License Block Comment
+
+Place this near the top of your main plugin file:
+
+```php
+/*
 {Plugin Name} is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
 the Free Software Foundation, either version 2 of the License, or
@@ -19,6 +29,17 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
-along with {Plugin Name}. If not, see {URI to Plugin License}.
-*/```
+along with {Plugin Name}. If not, see https://www.gnu.org/licenses/gpl-2.0.html.
+*/
 ```
+
+## Common Licenses
+
+| License | Slug | Description |
+|---------|------|-------------|
+| GPL v2 or later | `GPL v2 or later` | WordPress default, allows derivative works |
+| GPL v3 or later | `GPL v3 or later` | Stronger copyleft requirements |
+| MIT | `MIT` | Permissive, minimal restrictions |
+| Apache 2.0 | `Apache-2.0` | Permissive with patent grant |
+
+> **Note:** WordPress.org requires plugins to be GPL-compatible. The default choice (`GPL v2 or later`) is recommended for most plugins.

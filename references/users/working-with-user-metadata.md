@@ -1,177 +1,93 @@
 # Working with User Metadata
 
-## Introduction
+User metadata is stored in the `{$wpdb->prefix}_usermeta` table. Use it for any data beyond what's in the `wp_users` table (`ID`, `user_login`, `user_pass`, `user_nicename`, `user_email`, `user_url`, `user_registered`, `user_activation_key`, `user_status`, `display_name`).
 
-WordPress’```users```table was designed to contain only the essential information about the user.
-As of WP 4.7 the table contains:```ID```,```user_login```,```user_pass```,```user_nicename```,```user_email```,```user_url```,```user_registered```,```user_activation_key```,```user_status```and```display_name```.
+## Functions — CRUD Operations
 
-Because of this, to store additional data, the```usermeta```table was introduced, which can store any arbitrary amount of data about a user.
+| Function | Purpose | Signature |
+|----------|---------|-----------|
+| `add_user_meta()` | Add new metadata | `add_user_meta( int $user_id, string $meta_key, mixed $meta_value, bool $unique = false )` |
+| `update_user_meta()` | Update existing metadata | `update_user_meta( int $user_id, string $meta_key, mixed $meta_value, mixed $prev_value = '' )` |
+| `delete_user_meta()` | Delete metadata | `delete_user_meta( int $user_id, string $meta_key, mixed $meta_value = '' )` |
+| `get_user_meta()` | Retrieve metadata | `get_user_meta( int $user_id, string $key = '', bool $single = false )` |
 
-Both tables are tied together using one-to-many relationship based on the```ID```in the```users```table.
+### Get All Metadata for a User
 
-## Manipulating User Metadata
+```php
+$all_meta = get_user_meta( $user_id );  // Returns associative array of all keys
+```
 
-There are two main ways for manipulating User Metadata.
+## Profile Form Hooks
 
-- A form field in the user’s profile screen.
-- Programmatically, via a function call.
+| Hook | Fires When | Capability Required |
+|------|-----------|---------------------|
+| `show_user_profile` | User edits **own** profile | None (any logged-in user) |
+| `edit_user_profile` | User edits **another** user's profile | `edit_users` or specific user edit capability |
+| `personal_options_update` | Own profile is saved | Capability to edit own profile |
+| `edit_user_profile_update` | Another user's profile is saved | Capability to edit that user |
 
-### via a Form Field
+## Complete Profile Field Example
 
-The form field option is suitable for cases where the user will have access to the WordPress admin area, in which he will be able to view and edit profiles.
+```php
+add_action( 'show_user_profile', 'myplugin_add_birthday_field' );
+add_action( 'edit_user_profile', 'myplugin_add_birthday_field' );
 
-Before we dive into an example, it’s important to understand the hooks involved in the process and why they are there.
-
-#### show_user_profile hook
-
-This action hook is fired whenever a user editsit’s ownuser profile.
-
-Remember,a user that doesn’t have the capability of editing his own profile won’t fire this hook.
-
-#### edit_user_profile hook
-
-This action hook is fired whenever a user edits a user profile ofsomebody else.
-
-Remember,a user that doesn’t have the capability for editing 3rd party profiles won’t fire this hook.
-
-#### Example Form Field
-
-In the example below we will be adding a birthday field to the all profile screens. Saving it to the database on profile updates.
-
-```python
-```/**
- * The field on the editing screens.
- *
- * @param $user WP_User user object
- */
-function wporg_usermeta_form_field_birthday( $user ) {
+function myplugin_add_birthday_field( $user ) {
     ?>
-    <h3>It's Your Birthday</h3>
+    <h3><?php _e('Personal Information', 'text-domain'); ?></h3>
     <table class="form-table">
         <tr>
-            <th>
-                <label for="birthday">Birthday</label>
-            </th>
+            <th><label for="birthday"><?php _e('Birthday', 'text-domain'); ?></label></th>
             <td>
                 <input type="date"
-                       class="regular-text ltr"
                        id="birthday"
                        name="birthday"
-                       value="<?= esc_attr( get_user_meta( $user->ID, 'birthday', true ) ) ?>"
-                       title="Please use YYYY-MM-DD as the date format."
-                       pattern="(19[0-9][0-9]|20[0-9][0-9])-(1[0-2]|0[1-9])-(3[01]|[21][0-9]|0[1-9])"
-                       required>
-                <p class="description">
-                    Please enter your birthday date.
-                </p>
+                       value="<?php echo esc_attr( get_user_meta( $user->ID, 'birthday', true ) ); ?>" />
+                <p class="description"><?php _e('Please use YYYY-MM-DD format.', 'text-domain'); ?></p>
             </td>
         </tr>
     </table>
     <?php
 }
 
-/**
- * The save action.
- *
- * @param $user_id int the ID of the current user.
- *
- * @return bool Meta ID if the key didn't exist, true on successful update, false on failure.
- */
-function wporg_usermeta_form_field_birthday_update( $user_id ) {
-    // check that the current user have the capability to edit the $user_id
+add_action( 'personal_options_update', 'myplugin_save_birthday_field' );
+add_action( 'edit_user_profile_update', 'myplugin_save_birthday_field' );
+
+function myplugin_save_birthday_field( $user_id ) {
     if ( ! current_user_can( 'edit_user', $user_id ) ) {
         return false;
     }
 
-    // create/update user meta for the $user_id
-    return update_user_meta(
-        $user_id,
-        'birthday',
-        $_POST['birthday']
-    );
+    if ( isset( $_POST['birthday'] ) ) {
+        update_user_meta( $user_id, 'birthday', sanitize_text_field( $_POST['birthday'] ) );
+    }
 }
-
-// Add the field to user's own profile editing screen.
-add_action(
-    'show_user_profile',
-    'wporg_usermeta_form_field_birthday'
-);
-
-// Add the field to user profile editing screen.
-add_action(
-    'edit_user_profile',
-    'wporg_usermeta_form_field_birthday'
-);
-
-// Add the save action to user's own profile editing screen update.
-add_action(
-    'personal_options_update',
-    'wporg_usermeta_form_field_birthday_update'
-);
-
-// Add the save action to user profile editing screen update.
-add_action(
-    'edit_user_profile_update',
-    'wporg_usermeta_form_field_birthday_update'
-);```
 ```
 
-### Programmatically
+## Programmatic Usage — Example
 
-This option is suitable for cases where you’re building a custom user area and/or plan to disable access to the WordPress admin area.
+```php
+// Add metadata
+add_user_meta( $user_id, 'favorite_color', 'blue' );
 
-The functions available for manipulating User Metadata are:```add_user_meta()```,```update_user_meta()```,```delete_user_meta()```and```get_user_meta()```.
+// Update metadata
+update_user_meta( $user_id, 'favorite_color', 'red' );
 
-#### Add
+// Get single value
+$color = get_user_meta( $user_id, 'favorite_color', true );  // Returns string
 
-```python
-```add_user_meta(
-    int $user_id,
-    string $meta_key,
-    mixed $meta_value,
-    bool $unique = false
-);```
+// Get multiple values (if not unique)
+$colors = get_user_meta( $user_id, 'favorite_color' );  // Returns array
+
+// Delete metadata
+delete_user_meta( $user_id, 'favorite_color' );
 ```
 
-Please refer to the Function Reference about```add_user_meta()```for full explanation about the used parameters.
+## Key Notes
 
-#### Update
-
-```python
-```update_user_meta(
-    int $user_id,
-    string $meta_key,
-    mixed $meta_value,
-    mixed $prev_value = ''
-);```
-```
-
-Please refer to the Function Reference about```update_user_meta()```for full explanation about the used parameters.
-
-#### Delete
-
-```python
-```delete_user_meta(
-    int $user_id,
-    string $meta_key,
-    mixed $meta_value = ''
-);```
-```
-
-Please refer to the Function Reference about```delete_user_meta()```for full explanation about the used parameters.
-
-#### Get
-
-```python
-```get_user_meta(
-    int $user_id,
-    string $key = '',
-    bool $single = false
-);```
-```
-
-Please refer to the Function Reference about```get_user_meta()```for full explanation about the used parameters.
-
-Please note, if you pass only the```$user_id```, the function will retrieve all Metadata as an associative array.
-
-You can render User Metadata anywhere in your plugin or theme.
+| Consideration | Detail |
+|---------------|--------|
+| Unique flag | `add_user_meta()` `$unique = true` prevents duplicate keys on the same user |
+| Prev_value for update | `update_user_meta()` `$prev_value` only updates if current value matches (prevents race conditions) |
+| Sanitization | Always sanitize input (`sanitize_text_field()`, etc.) before calling `update_user_meta()` |
+| Escaping | Always escape output (`esc_attr()`, `esc_html()`) when rendering metadata |

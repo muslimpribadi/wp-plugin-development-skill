@@ -1,77 +1,77 @@
 # Heartbeat API
 
-The Heartbeat API is a simple server polling API built in to WordPress, allowing near-real-time frontend updates.
+The Heartbeat API provides periodic, low-overhead server communication for near-real-time updates (used by WordPress dashboard auto-save, post locking, etc.).
 
-## How it works
+## How It Works
 
-When the page loads, the client-side heartbeat code sets up an interval (called the “tick”) to run every 15-120 seconds. When it runs, heartbeat gathers data to send via a jQuery event, then sends this to the server and waits for a response. On the server, an admin-ajax handler takes the passed data, prepares a response, filters the response, then returns the data in JSON format. The client receives this data and fires a final jQuery event to indicate the data has been received.
+| Step | Direction | Event/Filter | Description |
+|------|-----------|-------------|-------------|
+| 1 | Client → Server | `heartbeat-send` (JS) | Add custom data to heartbeat payload |
+| 2 | Server → Filter | `heartbeat_received` (PHP) | Detect sent data, add response data |
+| 3 | Server → Client | (automatic JSON) | Response passed back to JS |
+| 4 | Client ← Server | `heartbeat-tick` (JS) | Process server response |
 
-The basic process for custom Heartbeat events is:
+## Sending Data to the Server
 
-- Add additional fields to the data to be sent (JS```heartbeat-send```event)
-- Detect sent fields in PHP, and add additional response fields (```heartbeat_received```filter)
-- Process returned data in JS (JS```heartbeat-tick```)
-
-(You can choose to use only one or two of these events, depending on what functionality you need.)
-
-## Using the API
-
-Using the heartbeat API requires two separate pieces of functionality: send and receive callbacks in JavaScript, and a server-side filter to process passed data in PHP.
-
-### Sending Data to the Server
-
-When Heartbeat sends data to the server, you can include custom data. This can be any data you want to send to the server, or a simple true value to indicate you are expecting data.
-
-```python
-```jQuery( document ).on( 'heartbeat-send', function ( event, data ) {
-	// Add additional data to Heartbeat data.
-	data.myplugin_customfield = 'some_data';
-});```
+```javascript
+jQuery(document).on('heartbeat-send', function(event, data) {
+    data.myplugin_customfield = 'some_data';
+});
 ```
 
-### Receiving and Responding on the Server
+## Receiving and Responding on the Server
 
-On the server side, you can then detect this data, and add additional data to the response.
+```php
+add_filter( 'heartbeat_received', 'myplugin_handle_heartbeat', 10, 2 );
 
-```python
-```/**
- * Receive Heartbeat data and respond.
- *
- * Processes data received via a Heartbeat request, and returns additional data to pass back to the front end.
- *
- * @param array $response Heartbeat response data to pass back to front end.
- * @param array $data     Data received from the front end (unslashed).
- *
- * @return array
- */
-function myplugin_receive_heartbeat( array $response, array $data ) {
-	// If we didn't receive our data, don't send any back.
-	if ( empty( $data['myplugin_customfield'] ) ) {
-		return $response;
-	}
+function myplugin_handle_heartbeat( array $response, array $data ) {
+    if ( empty( $data['myplugin_customfield'] ) ) {
+        return $response;
+    }
 
-	// Calculate our data and pass it back. For this example, we'll hash it.
-	$received_data = $data['myplugin_customfield'];
-
-	$response['myplugin_customfield_hashed'] = sha1( $received_data );
-	return $response;
+    $response['myplugin_customfield_hashed'] = sha1( $data['myplugin_customfield'] );
+    return $response;
 }
-add_filter( 'heartbeat_received', 'myplugin_receive_heartbeat', 10, 2 );```
 ```
 
-### Processing the Response
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `$response` | array | Current heartbeat response (add your data here) |
+| `$data` | array | Data sent from client (unslashed) |
 
-Back on the frontend, you can then handle receiving this data back.
+## Processing the Response on Client
 
-```python
-```jQuery( document ).on( 'heartbeat-tick', function ( event, data ) {
-	// Check for our data, and use it.
-	if ( ! data.myplugin_customfield_hashed ) {
-		return;
-	}
-
-	alert( 'The hash is ' + data.myplugin_customfield_hashed );
-});```
+```javascript
+jQuery(document).on('heartbeat-tick', function(event, data) {
+    if ( data.myplugin_customfield_hashed ) {
+        alert('Hash: ' + data.myplugin_customfield_hashed);
+    }
+});
 ```
 
-Not every feature will need all three of these steps. For example, if you don’t need to send any data to the server, you can use just the latter two steps.
+## Heartbeat Events Reference
+
+| Event | Direction | Handler | Purpose |
+|-------|-----------|---------|---------|
+| `heartbeat-send` | Client → Server | `jQuery(document).on('heartbeat-send', ...)` | Add custom data to payload |
+| `heartbeat-received` (PHP) | Server filter | `add_filter('heartbeat_received', ...)` | Detect sent data, prepare response |
+| `heartbeat-tick` | Server → Client | `jQuery(document).on('heartbeat-tick', ...)` | Process server response |
+
+## Controlling Heartbeat Interval
+
+Heartbeat fires every 15–120 seconds. Reduce frequency for low-activity pages:
+
+```javascript
+jQuery(document).ready(function($) {
+    // Set interval to 60 seconds (default is ~15-120)
+    wp.heartbeat.interval('60s');
+});
+```
+
+> **Note:** Heartbeat runs on all admin pages by default. Disable it entirely if not needed:
+> ```php
+> add_action('admin_enqueue_scripts', 'myplugin_disable_heartbeat');
+> function myplugin_disable_heartbeat() {
+>     wp_deregister_script('heartbeat');
+> }
+> ```

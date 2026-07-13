@@ -1,77 +1,67 @@
-# Summary
+# JavaScript Summary — AJAX Example
 
-Here are all the example code snippets from the preceding discussion, assembled into two complete code pages: one for jQuery and the other for PHP.
+## Complete PHP Handler
 
-## PHP
+Place in your plugin file:
 
-This code resides on one of your plugin pages.
+```php
+add_action( 'admin_enqueue_scripts', 'myplugin_enqueue_ajax' );
 
-```python
-```add_action( 'admin_enqueue_scripts', 'my_enqueue' );
-function my_enqueue( $hook ) {
-   if ( 'myplugin_settings.php' !== $hook ) {
-      return;
-   }
+function myplugin_enqueue_ajax( $hook ) {
+    if ( 'myplugin_settings.php' !== $hook ) {
+        return;
+    }
 
-   wp_enqueue_script(
-      'ajax-script',
-      plugins_url( '/js/myjquery.js', __FILE__ ),
-      array( 'jquery' ),
-      '1.0.0',
-      true
-   );
+    wp_enqueue_script(
+        'ajax-script',
+        plugins_url( '/js/myjquery.js', __FILE__ ),
+        array( 'jquery' ),
+        '1.0.0',
+        true
+    );
 
-   $title_nonce = wp_create_nonce( 'title_example' );
-   wp_localize_script(
-      'ajax-script',
-      'my_ajax_obj',
-      array(
-         'ajax_url' => admin_url( 'admin-ajax.php' ),
-         'nonce'    => $title_nonce,
-      )
-   );
+    wp_localize_script(
+        'ajax-script',
+        'my_ajax_obj',
+        array(
+            'ajax_url' => admin_url( 'admin-ajax.php' ),
+            'nonce'    => wp_create_nonce( 'title_example' ),
+        )
+    );
 }
 
-add_action( 'wp_ajax_my_tag_count', 'my_ajax_handler' );
-function my_ajax_handler() {
-   check_ajax_referer( 'title_example' );
+add_action( 'wp_ajax_my_tag_count', 'myplugin_ajax_handler' );
 
-   $title = wp_unslash( $_POST['title'] );
+function myplugin_ajax_handler() {
+    check_ajax_referer( 'title_example' );
 
-   update_user_meta( get_current_user_id(), 'title_preference', $title );
+    $title = wp_unslash( $_POST['title'] );
+    update_user_meta( get_current_user_id(), 'title_preference', sanitize_text_field( $title ) );
 
-   $args = array(
-      'tag' => $title,
-   );
+    $args     = array( 'tag' => $title );
+    $the_query = new WP_Query( $args );
 
-   $the_query = new WP_Query( $args );
-
-   echo esc_html( $title ) . ' (' . $the_query->post_count . ') ';
-
-   wp_die(); // all ajax handlers should die when finished
-}```
+    echo esc_html( $title ) . ' (' . $the_query->post_count . ') ';
+    wp_die();
+}
 ```
 
-## jQuery
+## Complete jQuery Handler
 
-This code is in the file```js/myjquery.js```below your plugin folder.
+Place in `js/myjquery.js`:
 
-```python
-```jQuery(document).ready(function($) { 	   //wrapper
-	$(".pref").change(function() { 		   //event
-		var this2 = this; 		           //use in callback
-		$.post(my_ajax_obj.ajax_url, { 	   //POST request
-	       _ajax_nonce: my_ajax_obj.nonce, //nonce
-			action: "my_tag_count",        //action
-	  		title: this.value 	           //data
-  		}, function(data) {		           //callback
-			this2.nextSibling.remove();    //remove the current title
-			$(this2).after(data); 	       //insert server response
-		});
-	});
-});```
+```javascript
+jQuery(document).ready(function($) {
+    $(".pref").change(function() {
+        var this2 = this;
+        $.post(my_ajax_obj.ajax_url, {
+            _ajax_nonce: my_ajax_obj.nonce,
+            action: "my_tag_count",
+            title: this.value
+        }, function(data) {
+            this2.nextSibling.remove();
+            $(this2).after(data);
+        });
+    });
+});
 ```
-
-And after storing the preference, the resulting post count is added to the selected title.
-
-## More Information

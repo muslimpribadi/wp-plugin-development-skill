@@ -1,91 +1,118 @@
-# Advanced Topics
+# Advanced Hook Topics
 
-## Removing Actions and Filters
+## remove_action() / remove_filter()
 
-Sometimes you want to remove a callback function from a hook that another plugin, theme or even WordPress Core has registered.
+Remove a previously registered callback. Parameters must match the original `add_action()`/`add_filter()` call exactly.
 
-To remove a callback function from a hook, you need to call```remove_action()```or```remove_filter()```, depending whether the callback function was added as an Action or a Filter.
+```php
+remove_action( string $hook_name, callable $callback, int $priority = 10 )
+remove_filter( string $hook_name, callable $callback, int $priority = 10 )
+```
 
-The parameters passed to```remove_action()```/```remove_filter()```must be identical to the parameters passed to```add_action()```/```add_filter()```that registered it, or the removal won’t work.
-To successfully remove a callback function you must perform the removal after the callback function was registered. The order of execution is important.
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `$hook_name` | string | Yes | The hook name |
+| `$callback` | callable | Yes | The exact same function reference used in `add_action()`/`add_filter()` |
+| `$priority` | int | No | Must match the original priority if set |
 
 ### Example
 
-Lets say we want to improve the performance of a large theme by removing unnecessary functionality.
+```php
+// Original registration (e.g., in a theme)
+add_action( 'template_redirect', 'theme_setup_slider', 9 );
 
-Let’s analyze the theme’s code by looking into```functions.php```.
+// Removal — must happen AFTER original registration
+add_action( 'after_setup_theme', 'myplugin_remove_slider' );
 
-```python
-```function wporg_setup_slider() {
-	// ...
+function myplugin_remove_slider() {
+    remove_action( 'template_redirect', 'theme_setup_slider', 9 );
 }
-add_action( 'template_redirect', 'wporg_setup_slider', 9 );```
 ```
 
-The```wporg_setup_slider```function is adding a slider that we don’t need, which probably loads a huge CSS file followed by a JavaScript initialization file which uses a custom written library the size of 1MB. We can can get rid of that.
+> **Note:** Removal must occur after the original callback is registered. Use a hook with later execution than the registration hook (e.g., `after_setup_theme` if the original was in `functions.php`).
 
-Since we want to hook into WordPress after the```wporg_setup_slider```callback function was registered (```functions.php```executed) our best chance would be the```after_setup_theme```hook.
+## remove_all_actions() / remove_all_filters()
 
-```python
-```function wporg_disable_slider() {
-	// Make sure all parameters match the add_action() call exactly.
-	remove_action( 'template_redirect', 'wporg_setup_slider', 9 );
-}
-// Make sure we call remove_action() after add_action() has been called.
-add_action( 'after_setup_theme', 'wporg_disable_slider' );```
+Remove all callbacks from a hook.
+
+```php
+remove_all_actions( string $hook_name, int $priority = false )
 ```
 
-## Removing All Callbacks
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `$hook_name` | string | Yes | Hook to clear |
+| `$priority` | int\|false | No | If set, only remove callbacks at that priority. `false` = all priorities. |
 
-You can also remove all of the callback functions associated with a hook by using```remove_all_actions()```/```remove_all_filters()```.
+### Example
 
-## Determining the Current Hook
-
-Sometimes you want to run an Action or a Filter on multiple hooks, but behave differently based on which one is currently calling it.
-
-You can use the```current_action()```/```current_filter()```to determine the current Action / Filter.
-
-```python
-```function wporg_modify_content( $content ) {
-	switch ( current_filter() ) {
-		case 'the_content':
-			// Do something.
-			break;
-		case 'the_excerpt':
-			// Do something.
-			break;
-	}
-	return $content;
-}
-
-add_filter( 'the_content', 'wporg_modify_content' );
-add_filter( 'the_excerpt', 'wporg_modify_content' );```
+```php
+remove_all_actions( 'wp_head' ); // Remove all wp_head callbacks
 ```
 
-## Checking How Many Times a Hook Has Run
+## current_action() / current_filter()
 
-Some hooks are called multiple times in the course of execution, but you may only want your callback function to run once.
+Identify which hook is currently executing inside a shared callback.
 
-In this situation, you can check how many times the hook has run with thedid_action().
-
-```python
-```function wporg_custom() {
-   // If save_post has been run more than once, skip the rest of the code.
-   if ( did_action( 'save_post' ) !== 1 ) {
-      return;
-   }
-   // ...
-}
-add_action( 'save_post', 'wporg_custom' );```
+```php
+current_action() // Returns string|false — name of current action
+current_filter() // Returns string|false — name of current filter
 ```
 
-## Debugging with the “all” Hook
+### Example
 
-If you want a callback function to fire on every single hook, you can register it to the```all```hook. Sometimes this is useful in debugging situations to help determine when a particular event is happening or when a page is crashing.
+```php
+add_filter( 'the_content', 'myplugin_modify_content' );
+add_filter( 'the_excerpt', 'myplugin_modify_content' );
 
-```python
-```function wporg_debug() {
-	echo '<p>' . current_action() . '</p>';
+function myplugin_modify_content( $content ) {
+    switch ( current_filter() ) {
+        case 'the_content':
+            return '<div class="full">' . $content . '</div>';
+        case 'the_excerpt':
+            return strip_tags( $content ) . '...';
+        default:
+            return $content;
+    }
 }
-add_action( 'all', 'wporg_debug' );```
 ```
+
+## did_action()
+
+Count how many times a hook has been triggered. Useful for running code only once.
+
+```php
+did_action( string $hook_name ): int
+```
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `$hook_name` | string | Yes | Hook name to count |
+| **Returns** | int | — | Number of times the hook has fired |
+
+### Example
+
+```php
+add_action( 'save_post', 'myplugin_handle_save' );
+
+function myplugin_handle_save( $post_id ) {
+    if ( did_action( 'save_post' ) > 1 ) {
+        return; // Skip recursive calls
+    }
+    // Process once
+}
+```
+
+## All Hook ('all')
+
+Fire a callback on every hook execution. Useful for debugging.
+
+```php
+add_action( 'all', 'myplugin_debug_hook' );
+
+function myplugin_debug_hook() {
+    error_log( current_action() . ' | ' . current_filter() );
+}
+```
+
+> **Note:** The `all` hook fires on every action AND filter. Use with caution in production — it adds overhead to every hook call.

@@ -1,109 +1,104 @@
 # Working with Users
 
-## Adding Users
+## Creating Users
 
-To add a user you can use```wp_create_user()```or```wp_insert_user()```.
+| Function | Use Case | Signature |
+|----------|----------|-----------|
+| `wp_create_user()` | Simple creation (username, password, email only) | `wp_create_user( string $username, string $password, string $email )` |
+| `wp_insert_user()` | Full control (accepts array of user properties) | `wp_insert_user( array\|WP_User $userdata )` |
 
-```wp_create_user()```creates a user using only the username, password and email parameters while```wp_insert_user()```accepts an array or object describing the user and its properties.
+### Simple Creation
 
-### Create User
+```php
+$user_id = username_exists( $user_name );  // Check if username taken
 
-```wp_create_user()```allows you to create a new WordPress user.
-It useswp_slash()to escape the values. The PHP compact() function to create an array with these values. Thewp_insert_user()to perform the insert operation.
-
-Please refer to the Function Reference about```wp_create_user()```for full explanation about the used parameters.
-
-#### Example Create
-
-```python
-```// check if the username is taken
-$user_id = username_exists( $user_name );
-
-// check that the email address does not belong to a registered user
-if ( ! $user_id && email_exists( $user_email ) === false ) {
-	// create a random password
-	$random_password = wp_generate_password( 12, false );
-	// create the user
-	$user_id = wp_create_user(
-		$user_name,
-		$random_password,
-		$user_email
-	);
-}```
+if ( ! $user_id && ! email_exists( $user_email ) ) {
+    $random_password = wp_generate_password( 12, false );
+    $user_id = wp_create_user( $user_name, $random_password, $user_email );
+}
 ```
 
-### Insert User
+### Full User Creation
 
-```python
-```wp_insert_user( $userdata );```
-```
-
-The function calls a filter for most predefined properties.
-
-The function performs the action```user_register```when creating a user (user ID does not exist).
-
-The function performs the action```profile_update```when updating the user (user ID exists).
-
-Please refer to the Function Reference about```wp_insert_user()```for full explanation about the used parameters.
-
-#### Example Insert
-
-Below is an example showing how to insert a new user with the website profile field filled in.
-
-```python
-```$username  = $_POST['username'];
-$password  = $_POST['password'];
-$website   = $_POST['website'];
-$user_data = [
-	'user_login' => $username,
-	'user_pass'  => $password,
-	'user_url'   => $website,
-];
+```php
+$user_data = array(
+    'user_login'   => 'johndoe',
+    'user_pass'    => 'securepassword',
+    'user_email'   => 'john@example.com',
+    'user_url'     => 'https://example.com',
+    'first_name'   => 'John',
+    'last_name'    => 'Doe',
+    'display_name' => 'John Doe',
+    'role'         => 'author',
+);
 
 $user_id = wp_insert_user( $user_data );
 
-// success
-if ( ! is_wp_error( $user_id ) ) {
-	echo 'User created: ' . $user_id;
-}```
+if ( is_wp_error( $user_id ) ) {
+    // Handle error: $user_id->get_error_message()
+} else {
+    // Success: $user_id contains the new user ID
+}
 ```
+
+> **Note:** `wp_insert_user()` fires `user_register` on creation (ID doesn't exist) and `profile_update` on update (ID exists).
 
 ## Updating Users
 
-```wp_update_user()```Updates a single user in the database. The update data is passed along in the```$userdata```array/object.
+| Function | Purpose | Signature |
+|----------|---------|-----------|
+| `wp_update_user()` | Update a user record | `wp_update_user( array\|WP_User $userdata )` |
+| `update_user_meta()` | Update single metadata field | `update_user_meta( int $user_id, string $meta_key, mixed $meta_value )` |
 
-To update a single piece of user meta data, use```update_user_meta()```instead. To create a new user, use```wp_insert_user()```instead.
-If current user’s password is being updated, then the cookies will be cleared!
-
-Please refer to the Function Reference about```wp_update_user()```for full explanation about the used parameters.
-
-#### Example Update
-
-Below is an example showing how to update a user’s website profile field.
-
-```python
-```$user_id = 1;
-$website = 'https://wordpress.org';
-
-$user_id = wp_update_user(
-	array(
-		'ID'       => $user_id,
-		'user_url' => $website,
-	)
-);
+```php
+$user_id = wp_update_user( array(
+    'ID'       => 42,
+    'user_url' => 'https://newsite.com',
+    'display_name' => 'New Name',
+) );
 
 if ( is_wp_error( $user_id ) ) {
-	// error
-} else {
-	// success
-}```
+    // Handle error
+}
 ```
+
+> **Warning:** If the user's password is being updated via `wp_update_user()`, all cookies for that user are cleared.
 
 ## Deleting Users
 
-```wp_delete_user()```deletes the user and optionally reassign associated entities to another user ID.
-The function performs the action```deleted_user```after the user have been deleted.
+| Function | Purpose | Signature |
+|----------|---------|-----------|
+| `wp_delete_user()` | Delete a user and optionally reassign content | `wp_delete_user( int $id, int $reassign = null )` |
 
-If the $reassign parameter is not set to a valid user ID, then all entities belonging to the deleted user will be deleted!
+```php
+// Delete user; all their posts are deleted too
+$result = wp_delete_user( 42 );
 
-Please refer to the Function Reference about```wp_delete_user()```for full explanation about the used parameters.
+// Delete user; reassign posts to user ID 1
+$result = wp_delete_user( 42, 1 );
+
+if ( is_wp_error( $result ) ) {
+    // Handle error
+} else {
+    // Success: $result contains number of items reassigned/deleted
+}
+```
+
+> **Warning:** If `$reassign` is not set to a valid user ID, all content associated with the deleted user (posts, comments, etc.) is permanently deleted.
+
+## Helper Functions
+
+| Function | Purpose | Signature |
+|----------|---------|-----------|
+| `username_exists()` | Check if username is taken | `username_exists( string $username )` → user ID or `null` |
+| `email_exists()` | Check if email is registered | `email_exists( string $email )` → user ID or `null` |
+| `wp_generate_password()` | Generate random password | `wp_generate_password( int $length = 12, bool $special_chars = true )` |
+
+## Key Notes
+
+| Consideration | Detail |
+|---------------|--------|
+| Validation | Always check `is_wp_error()` after create/update/delete operations |
+| Passwords | Never store plaintext passwords; use `wp_create_user()` or let `wp_insert_user()` hash via `wp_hash_password()` |
+| Role assignment | Set `'role'` in `$userdata` array for `wp_insert_user()` — defaults to site default role |
+| Hooks | `user_register` fires on creation, `profile_update` fires on update, `deleted_user` fires after deletion |

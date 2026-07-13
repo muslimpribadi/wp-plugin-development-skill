@@ -1,92 +1,73 @@
-# Determining Plugin and Content Directories
+# Plugin and Content Directory Functions
 
-When coding WordPress plugins you often need to reference various files and folders throughout the WordPress installation and within your plugin or theme.
+Always use WordPress functions — never hardcode `wp-content` paths. Users can rename or relocate `wp-content`.
 
-WordPress provides several functions for easily determining where a given file or directory lives. Always use these functions in your plugins instead of hard-coding references to the wp-content directory or using the WordPress internal constants.WordPress allows users to place their wp-content directory anywhere they want and rename it whatever they want. Never assume that plugins will be in wp-content/plugins, uploads will be in wp-content/uploads, or that themes will be in wp-content/themes.
+## URL Functions (for enqueueing, linking)
 
-PHP’s```__FILE__```magic-constant resolves symlinks automatically, so if the```wp-content```or```wp-content/plugins```or even the individual plugin directory is symlinked, hardcoded paths will not work correctly.
+| Function | Returns | Example |
+|----------|---------|---------|
+| `plugins_url( $path, $file )` | Full URL to file in plugin directory | `plugins_url( 'js/script.js', __FILE__ )` → `example.com/wp-content/plugins/myplugin/js/script.js` |
+| `plugin_dir_url( $file )` | URL of the plugin's directory | `plugin_dir_url( __FILE__ )` → `example.com/wp-content/plugins/myplugin/` |
 
-## Common Usage
+## Path Functions (for file includes)
 
-If your plugin includes JavaScript files, CSS files or other external files, then it’s likely you’ll need the URL to these files so you can load them into the page. To do this you should use theplugins_url()function like so:
+| Function | Returns | Example |
+|----------|---------|---------|
+| `plugin_dir_path( $file )` | Server path to plugin directory | `plugin_dir_path( __FILE__ )` → `/var/www/html/wp-content/plugins/myplugin/` |
+| `plugin_basename( $file )` | Plugin slug (relative path) | `plugin_basename( __FILE__ )` → `myplugin/myplugin.php` |
 
-```python
-```plugins_url( 'myscript.js', __FILE__ );```
+## Theme Functions
+
+| Function | Returns | Example |
+|----------|---------|---------|
+| `get_template_directory_uri()` | URL of parent theme directory | `example.com/wp-content/themes/twentytwentyfour/` |
+| `get_stylesheet_directory_uri()` | URL of child/active theme | Same as above (different for child themes) |
+| `get_theme_root_uri()` | URL of themes directory | `example.com/wp-content/themes/` |
+
+## Site & WordPress Functions
+
+| Function | Returns | Example |
+|----------|---------|---------|
+| `site_url()` | WordPress core URL | `example.com` or `example.com/wordpress/` |
+| `home_url()` | Frontend URL (as set in Settings) | `example.com` |
+| `admin_url()` | Admin directory URL | `example.com/wp-admin/` |
+| `content_url()` | wp-content URL | `example.com/wp-content/` |
+| `includes_url()` | wp-includes URL | `example.com/wp-includes/` |
+| `wp_upload_dir()` | Array with upload paths and URLs | `wp_upload_dir()['basedir']`, `wp_upload_dir()['baseurl']` |
+
+## Multisite Functions
+
+| Function | Returns | Example |
+|----------|---------|---------|
+| `get_admin_url( $blog_id )` | Admin URL for specific site | `get_admin_url( 2 )` → site #2 admin |
+| `get_site_url( $blog_id )` | Site URL for specific site | `get_site_url( 2 )` → site #2 frontend |
+| `network_admin_url()` | Network admin URL | `example.com/wp-admin/network/` |
+| `network_site_url()` | Network site URL | `example.com/site2/` |
+
+## Common Patterns
+
+```php
+// Enqueue a script
+wp_enqueue_script( 'my-script', plugins_url( '/js/script.js', __FILE__ ), array(), '1.0' );
+
+// Include another PHP file
+require_once plugin_dir_path( __FILE__ ) . 'includes/helper.php';
+
+// Get upload directory URL
+$upload_dir = wp_upload_dir();
+$image_url  = $upload_dir['baseurl'] . '/2024/01/image.jpg';
 ```
 
-This will return the full URL to myscript.js, such as```example.com/wp-content/plugins/myplugin/myscript.js```.
+## Constants (Do Not Use Directly)
 
-To load your plugins’ JavaScript or CSS into the page you should use```wp_enqueue_script()```or```wp_enqueue_style()```respectively, passing the result of```plugins_url()```as the file URL.
+These are available but should not be used directly in plugins:
 
-## Available Functions
+| Constant | Description |
+|----------|-------------|
+| `WP_CONTENT_DIR` | Full server path to wp-content |
+| `WP_CONTENT_URL` | Full URL to wp-content |
+| `WP_PLUGIN_DIR` | Full server path to plugins directory |
+| `WP_PLUGIN_URL` | Full URL to plugins directory |
+| `UPLOADS` | Relative path to uploads folder (multisite only) |
 
-WordPress includes many other functions for determining paths and URLs to files or directories within plugins, themes, and WordPress itself. See the individual DevHub pages for each function for complete information on their use.
-
-### Plugins
-
-```python
-```plugins_url()
-plugin_dir_url()
-plugin_dir_path()
-plugin_basename()```
-```
-
-### Themes
-
-```python
-```get_template_directory_uri()
-get_stylesheet_directory_uri()
-get_stylesheet_uri()
-get_theme_root_uri()
-get_theme_root()
-get_theme_roots()
-get_stylesheet_directory()
-get_template_directory()```
-```
-
-### Site Home
-
-```python
-```home_url()
-get_home_path()```
-```
-
-### WordPress
-
-```python
-```admin_url()
-site_url()
-content_url()
-includes_url()
-wp_upload_dir()```
-```
-
-### Multisite
-
-```python
-```get_admin_url()
-get_home_url()
-get_site_url()
-network_admin_url()
-network_site_url()
-network_home_url()```
-```
-
-## Constants
-
-WordPress makes use of the following constants when determining the path to the content and plugin directories. These should not be used directly by plugins or themes, but are listed here for completeness.
-
-```python
-```WP_CONTENT_DIR  // no trailing slash, full paths only
-WP_CONTENT_URL  // full url
-WP_PLUGIN_DIR  // full path, no trailing slash
-WP_PLUGIN_URL  // full url, no trailing slash
-
-// Available per default in MS, not set in single site install
-// Can be used in single site installs (as usual: at your own risk)
-UPLOADS // (If set, uploads folder, relative to ABSPATH) (for e.g.: /wp-content/uploads)```
-```
-
-## Related
-
-WordPress Directories:home_url()Home URLhttp://www.example.comsite_url()Site directory URLhttp://www.example.comorhttp://www.example.com/wordpressadmin_url()Admin directory URLhttp://www.example.com/wp-adminincludes_url()Includes directory URLhttp://www.example.com/wp-includescontent_url()Content directory URLhttp://www.example.com/wp-contentplugins_url()Plugins directory URLhttp://www.example.com/wp-content/pluginswp_upload_dir()Upload directory URL (returns an array)http://www.example.com/wp-content/uploads
+> **Note:** These constants may not be set in all environments. Always use the functions above instead.

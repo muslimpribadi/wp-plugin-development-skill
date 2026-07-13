@@ -1,97 +1,72 @@
 # Actions
 
-Actionsare one of the two types ofHooks. They provide a way for running a function at a specific point in the execution of WordPress Core, plugins, and themes. Callback functions for an Action do not return anything back to the calling Action hook. They are the counterpart toFilters. Here is a refresher ofthe difference between actions and filters.
+Actions execute a callback at a specific point in WordPress execution. Callbacks do not return values.
 
-## Adding an Action
+## add_action()
 
-The process of adding an action includes two steps:
+```php
+add_action( string $hook_name, callable $callback, int $priority = 10, int $accepted_args = 1 )
+```
 
-### Create a callback function
+| Parameter | Type | Required | Default | Description |
+|-----------|------|----------|---------|-------------|
+| `$hook_name` | string | Yes | — | Name of the action hook to attach to |
+| `$callback` | callable | Yes | — | Function or method to execute |
+| `$priority` | int | No | 10 | Execution order (lower = earlier). Typical range: 1–20. Default priority callbacks run first, then higher numbers. |
+| `$accepted_args` | int | No | 1 | Number of arguments to pass from `do_action()` to callback |
 
-First, create acallback function. This function will be run when the action it is hooked to is run.
+### Example
 
-The callback function is just like a normal function: it should be prefixed, and it should be in```functions.php```or somewhere callable. The parameters it should accept will be defined by the action you are hooking to; most hooks are well defined, so review the hooks docs to see what parameters the action you have selected will pass to your function.
+```php
+add_action( 'init', 'myplugin_init_callback' );
 
-### Assign (hook) your callback function
-
-Second, add your callback function to the action. This is calledhookingand tells the action to run your callback function when the action is run.
-
-When your callback function is ready, useadd_action()to hook it to the action you have selected. At a minimum,```add_action()```requires two parameters:
-
-- ```string $hook_name```which is the name of the action you’re hooking to, and
-- ```callable $callback```the name of your callback function.
-
-The example below will run```wporg_callback()```when the```init```hook is executed:
-
-```python
-```function wporg_callback() {
-    // do something
+function myplugin_init_callback() {
+    // Runs on WordPress init
 }
-add_action( 'init', 'wporg_callback' );```
 ```
 
-You can refer to theHookschapter for a list of available hooks.
+### Priority Order
 
-As you gain more experience, looking through WordPress Core source code will allow you to find the most appropriate hook.
+| Callback | Priority | Execution Order |
+|----------|----------|-----------------|
+| `mycallback_early` | 9 | 1st (before default) |
+| `mycallback_default` | 10 (default) | 2nd |
+| `mycallback_late` | 11 | 3rd (after default) |
 
-### Additional Parameters
+When priority is equal, execution order follows registration order.
 
-```add_action()```can accept two additional parameters,```int $priority```for the priority given to the callback function, and```int $accepted_args```for the number of arguments that will be passed to the callback function.
+### Passing Arguments
 
-#### Priority
+If the action passes multiple arguments, specify `$accepted_args`:
 
-Many callback functions can be hooked to a single action. The```init```hook for example gets a lot of use. There may be cases where you need to ensure that your callback function runs before or after other callback functions, even when those other functions may not yet have been hooked.
+```php
+// Hook receives: $post_id, $post object
+add_action( 'save_post', 'myplugin_save_handler', 10, 2 );
 
-WordPress determines the order that callback functions are run based on two things: The first way is by manually setting thepriority. This is done using the third argument to```add_action()```.
-
-Here are some important facts about priorities:
-
-- priorities are positive integers, typically between 1 and 20
-- the default priority (meaning, the priority assigned when no```priority```value is manually supplied) is 10
-- there is no theoretical upper limit on the priority value, but the realistic upper limit is 100
-
-A function with a priority of 11 will runaftera function with a priority of 10; and a function with a priority of 9 will runbeforea function with a priority of 10.
-
-The second way that callback function order is determined is simply by the order in which it was registeredwithin the same priority value. So if two callback functions are registered for the same hook with the same priority, they will be run in the order that they were registered to the hook.
-
-For example, the following callback functions are all registered to the```init```hook, but with different priorities:
-
-```python
-```add_action('init', 'wporg_callback_run_me_late', 11);
-add_action('init', 'wporg_callback_run_me_normal');
-add_action('init', 'wporg_callback_run_me_early', 9);
-add_action('init', 'wporg_callback_run_me_later', 11);```
+function myplugin_save_handler( $post_id, $post ) {
+    // Process post data
+}
 ```
 
-In the example above:
+> **Note:** The callback function must declare the same number of parameters as `$accepted_args`.
 
-- The first function run will be```wporg_callback_run_me_early()```, because it has a manual priority of 9
-- Next,```wporg_callback_run_me_normal(),```because it has no priority set and so its priority is 10
-- Next,```wporg_callback_run_me_late()```is run because it has a manual priority of 11
-- Finally,```wporg_callback_run_me_later()```is run: it also has a priority of 11, but it was hooked after```wporg_callback_run_me_late()```.
+## do_action()
 
-#### Number of Arguments
+Trigger an action hook.
 
-Sometimes it’s desirable for a callback function to receive some extra data related to the action being hooked to.
-
-For example, when WordPress saves a post and runs the```save_post```hook, it passes two parameters to the callback function: the ID of the post being saved, and the post object itself:
-
-```python
-```do_action( 'save_post', $post->ID, $post );```
+```php
+do_action( string $hook_name, mixed ...$args )
 ```
 
-When a callback function is registered for the```save_post```hook, it can specify that it wants to receive those two parameters. It does so by telling```add_action```to expect them by (in this case) putting```2```as the fourth argument:
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `$hook_name` | string | Yes | Name of the action to trigger |
+| `...$args` | mixed | No | Arguments passed to callback functions |
 
-```python
-```add_action('save_post', 'wporg_custom', 10, 2);```
+### Example
+
+```php
+do_action( 'myplugin_before_export' );
+
+do_action( 'myplugin_user_registered', $user_id, $userdata );
 ```
-
-In order to actually receive those parameters in your callback function, modify the parameters your callback function will accept, like this:
-
-```python
-```function wporg_custom( $post_id, $post ) {
-    // do something
-}```
-```
-
-It’s good practice to give your callback function parameters the same name as the passed parameters, or as close as you can.

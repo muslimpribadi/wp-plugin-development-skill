@@ -1,93 +1,110 @@
 # Shortcodes with Parameters
 
-Now that we know how to create abasic shortcodeand how to use it asself-closing and enclosing, we will look at using parameters in shortcode```[$tag]```and handler function.
+Shortcodes can accept named attributes (parameters) and have a 3-parameter callback signature.
 
-Shortcode```[$tag]```can accept parameters, known as attributes:
+## Callback Signature
 
-```python
-```[wporg title="WordPress.org"]
-Having fun with WordPress.org shortcodes.
-[/wporg]```
+```php
+function my_shortcode( $atts = array(), $content = null, $tag = '' )
 ```
 
-Shortcode handler function can accept 3 parameters:
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `$atts` | array | Shortcode attributes (e.g., `[wporg title="WP"]` → `array('title' => 'WP')`) |
+| `$content` | string\|null | Enclosed content. `null` for self-closing tags. |
+| `$tag` | string | The shortcode tag name (useful for a generic handler) |
 
-- ```$atts```– array – [$tag] attributes
-- ```$content```– string – The content inside your shortcode. In the example above, it will be “Having fun with WordPress.org shortcodes.”
-- ```$tag```– string – the name of the [$tag] (i.e. the name of the shortcode)
+## Parsing Attributes with Defaults
 
-```python
-```function wporg_shortcode( $atts = array(), $content = null, $tag = '' ) {}```
+```php
+function wporg_shortcode( $atts = array(), $content = null, $tag = '' ) {
+    // Normalize keys to lowercase
+    $atts = array_change_key_case( (array) $atts, CASE_LOWER );
+
+    // Merge with defaults — only user-provided values override
+    $wporg_atts = shortcode_atts(
+        array(
+            'title' => 'WordPress.org',
+        ),
+        $atts,
+        $tag
+    );
+
+    // Build output
+    $output = '<div class="wporg-box">';
+    $output .= '<h2>' . esc_html( $wporg_atts['title'] ) . '</h2>';
+
+    if ( ! is_null( $content ) ) {
+        $output .= apply_filters( 'the_content', $content );
+    }
+
+    $output .= '</div>';
+    return $output;
+}
 ```
 
-## Parsing Attributes
+## shortcode_atts()
 
-For the user, shortcodes are just strings with square brackets inside the post content. The user have no idea which attributes are available and what happens behind the scenes.
+```php
+shortcode_atts( array $pairs, array $atts, string $name = '' )
+```
 
-For plugin developers, there is no way to enforce a policy on the use of attributes. The user may include one attribute, two or none at all.
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `$pairs` | array | Default attribute key/value pairs |
+| `$atts` | array | User-provided attributes (from callback) |
+| `$name` | string | Shortcode tag name (for error messages) |
 
-To gain control of how the shortcodes are used:
-
-- Declare default parameters for the handler function
-- Performing normalization of the key case for the attributes array witharray_change_key_case()
-- Parse attributes usingshortcode_atts()providing default values array and user```$atts```
-- Secure the outputbefore returning it
+Returns an array with only the keys defined in `$pairs`, merged with user values. Extra user keys are silently dropped.
 
 ## Complete Example
 
-Complete example using a basic shortcode structure, taking care of self-closing and enclosing scenarios  and securing output.
+```php
+add_action( 'init', 'myplugin_register_shortcodes' );
 
-A```[wporg]```shortcode that will accept a title and will display a box that we can style with CSS.
+function myplugin_register_shortcodes() {
+    add_shortcode( 'wporg', 'myplugin_wporg_handler' );
+}
 
-```python
-```/**
- * The [wporg] shortcode.
- *
- * Accepts a title and will display a box.
+/**
+ * [wporg title="WordPress.org"]Content[/wporg]
  *
  * @param array  $atts    Shortcode attributes. Default empty.
  * @param string $content Shortcode content. Default null.
  * @param string $tag     Shortcode tag (name). Default empty.
  * @return string Shortcode output.
  */
-function wporg_shortcode( $atts = [], $content = null, $tag = '' ) {
-	// normalize attribute keys, lowercase
-	$atts = array_change_key_case( (array) $atts, CASE_LOWER );
+function myplugin_wporg_handler( $atts = array(), $content = null, $tag = '' ) {
+    // Normalize attribute keys to lowercase
+    $atts = array_change_key_case( (array) $atts, CASE_LOWER );
 
-	// override default attributes with user attributes
-	$wporg_atts = shortcode_atts(
-		array(
-			'title' => 'WordPress.org',
-		), $atts, $tag
-	);
+    // Set defaults and merge with user attributes
+    $wporg_atts = shortcode_atts(
+        array(
+            'title' => 'WordPress.org',
+        ),
+        $atts,
+        $tag
+    );
 
-	// start box
-	$o = '<div class="wporg-box">';
+    // Build output — always escape
+    $o = '<div class="wporg-box">';
+    $o .= '<h2>' . esc_html( $wporg_atts['title'] ) . '</h2>';
 
-	// title
-	$o .= '<h2>' . esc_html( $wporg_atts['title'] ) . '</h2>';
+    if ( ! is_null( $content ) ) {
+        $o .= apply_filters( 'the_content', $content );
+    }
 
-	// enclosing tags
-	if ( ! is_null( $content ) ) {
-		// $content here holds everything in between the opening and the closing tags of your shortcode. eg.g [my-shortcode]content[/my-shortcode].
-        // Depending on what your shortcode supports, you will parse and append the content to your output in different ways.
-		// In this example, we just secure output by executing the_content filter hook on $content.
-		$o .= apply_filters( 'the_content', $content );
-	}
-
-	// end box
-	$o .= '</div>';
-
-	// return output
-	return $o;
+    $o .= '</div>';
+    return $o;
 }
-
-/**
- * Central location to create all shortcodes.
- */
-function wporg_shortcodes_init() {
-	add_shortcode( 'wporg', 'wporg_shortcode' );
-}
-
-add_action( 'init', 'wporg_shortcodes_init' );```
 ```
+
+## Key Notes
+
+| Consideration | Detail |
+|---------------|--------|
+| No enforcement | Shortcodes have no schema — users can provide any attributes or none at all |
+| Defaults always set | Always call `shortcode_atts()` to establish defaults before using values |
+| Case sensitivity | Use `array_change_key_case()` if you want case-insensitive attribute matching |
+| Security | Escape all output (`esc_html()`, `esc_attr()`) before returning |

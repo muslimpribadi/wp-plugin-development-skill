@@ -86,6 +86,20 @@ This skill enforces a security-first approach:
 - WordPress 6.0+
 - Python 3.8+ (for security validator script)
 
+## Citation
+
+If you use this skill in your research or project, please cite the Qwen model:
+
+```bibtex
+@misc{qwen36_35b_a3b,
+    title = {{Qwen3.6-35B-A3B}: Agentic Coding Power, Now Open to All},
+    url = {https://qwen.ai/blog?id=qwen3.6-35b-a3b},
+    author = {{Qwen Team}},
+    month = {April},
+    year = {2026}
+}
+```
+
 ## License
 
 GPL-2.0+ — Same license as WordPress itself.

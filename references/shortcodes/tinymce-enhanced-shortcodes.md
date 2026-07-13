@@ -1,27 +1,15 @@
 # TinyMCE Enhanced Shortcodes
 
-It’s possible to parse shortcodes within the visual editor of TinyMCE and make them render actual content, rather than the shortcode itself.
+WordPress includes built-in shortcodes that render inline content in the Visual (TinyMCE) editor. Switching to the Text tab reveals the raw shortcode.
 
-Switching to the```Text```tab allows you to see the actual shortcode again.
+## Built-in Media Shortcodes
 
-Below are the built-in WordPress shortcodes that use this functionality.
+| Shortcode | Purpose |
+|-----------|---------|
+| `[audio]` | Embed a single audio file |
+| `[video]` | Embed a single video file |
+| `[gallery]` | Display multiple images in a gallery layout |
+| `[playlist]` | HTML5 audio/video playlist with multiple media files |
+| `[caption]` | Wrap an image in a div with `<p class="wp-caption-text">` caption |
 
-## Audio Shortcode
-
-The```[audio]```shortcode allows you to embed a single audio file.
-
-## Caption Shortcode
-
-The```[caption]```shortcode wraps the image in a div and puts a```<p class="wp-caption-text">```tag around the caption.
-
-## Gallery Shortcode
-
-The```[gallery]```shortcode allows you to embed several images at once in a div.
-
-## Playlist Shortcode
-
-The```[playlist]```shortcode allows you to attach more than one media file and render with an html5 playlist.
-
-## Video Shortcode
-
-The```[video]```shortcode is very similar to the```[audio]```shortcode; it simply renders a video instead of audio.
+> **Note:** These are handled by WordPress core. Custom shortcodes do not render in TinyMCE by default — use the [TinyMCE API](https://developer.wordpress.org/themes/advanced-tinymce/) to add custom visual support.

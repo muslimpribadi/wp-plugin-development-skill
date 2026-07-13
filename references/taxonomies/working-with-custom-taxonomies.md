@@ -1,118 +1,124 @@
 # Working with Custom Taxonomies
 
-## Introduction to Taxonomies
+Register custom taxonomies via `register_taxonomy()` on the `init` hook. WordPress provides built-in `category` and `post_tag` — use this for any additional classification system.
 
-To understand what Taxonomies are and what they do please read theTaxonomyintroduction.
+## register_taxonomy()
 
-## Custom Taxonomies
-
-As classification systems go, “Categories” and “Tags” aren’t very structured, so it may be beneficial for a developer to create their own.
-
-WordPress allows developers to createCustom Taxonomies. Custom Taxonomies are useful when one wants to create distinct naming systems and make them accessible behind the scenes in a predictable way.
-
-## Why Use Custom Taxonomies?
-
-You might ask, “Why bother creating a Custom Taxonomy, when I can organize by Categories and Tags?”
-
-Well… let’s use an example. Suppose we have a client that is a chef who wants you to create a website where she’ll feature original recipes.
-
-One way to organize the website might be to create a Custom Post Type called “Recipes” to store her recipes. Then create a Taxonomy “Courses” to separate “Appetizers” from “Desserts”, and finally a Taxonomy “Ingredients” to separate “Chicken” from “Chocolate” dishes.
-
-These groupscouldbe defined using Categories or Tags, you could have a “Courses” Category with Subcategories for “Appetizers” and “Desserts”, and an “Ingredients” Category with Subcategories for each ingredient.
-
-The main advantage of using Custom Taxonomies is that you can reference “Courses” and “Ingredients” independently of Categories and Tags. They even get their own menus in the Administration area.
-
-In addition, creating Custom Taxonomies allows you to build custom interfaces which will ease the life of your client and make the process of inserting data intuitive to their business nature.
-
-Now imagine that these Custom Taxonomies and the interface is implemented inside a plugin; you’ve just built your own Recipes plugin that can be reused on any WordPress website.
-
-## Example: Courses Taxonomy
-
-The following example will show you how to create a plugin which adds a Custom Taxonomy “Courses” to the default```post```Post Type. Note that the code to add custom taxonomies does not have to be in its own plugin; it can be included in a theme or as part of an existing plugin if desired.
-
-Please make sure to read thePlugin Basicschapter before attempting to create your own plugin.
-
-### Step 1: Before You Begin
-
-Go toPosts > Add Newpage. You will notice that you only have Categories and Tags.
-
-### Step 2: Creating a New Plugin
-
-Register the Taxonomy “course” for the post type “post” using the```init```action hook.
-
-```python
-```/*
-* Plugin Name: Course Taxonomy
-* Description: A short example showing how to add a taxonomy called Course.
-* Version: 1.0
-* Author: developer.wordpress.org
-* Author URI: https://codex.wordpress.org/User:Aternus
-*/
-
-function wporg_register_taxonomy_course() {
-	 $labels = array(
-		 'name'              => _x( 'Courses', 'taxonomy general name' ),
-		 'singular_name'     => _x( 'Course', 'taxonomy singular name' ),
-		 'search_items'      => __( 'Search Courses' ),
-		 'all_items'         => __( 'All Courses' ),
-		 'parent_item'       => __( 'Parent Course' ),
-		 'parent_item_colon' => __( 'Parent Course:' ),
-		 'edit_item'         => __( 'Edit Course' ),
-		 'update_item'       => __( 'Update Course' ),
-		 'add_new_item'      => __( 'Add New Course' ),
-		 'new_item_name'     => __( 'New Course Name' ),
-		 'menu_name'         => __( 'Course' ),
-	 );
-	 $args   = array(
-		 'hierarchical'      => true, // make it hierarchical (like categories)
-		 'labels'            => $labels,
-		 'show_ui'           => true,
-		 'show_admin_column' => true,
-		 'query_var'         => true,
-		 'rewrite'           => [ 'slug' => 'course' ],
-	 );
-	 register_taxonomy( 'course', [ 'post' ], $args );
-}
-add_action( 'init', 'wporg_register_taxonomy_course' );```
+```php
+register_taxonomy( string $taxonomy, array|string $object_type, array $args = array() )
 ```
 
-### Step 3: Review the Result
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `$taxonomy` | string | Yes | Taxonomy slug (lowercase, underscores for spaces). Must start with a letter. Max 32 characters in core. |
+| `$object_type` | array\|string | Yes | Post types to associate (e.g., `array( 'post', 'product' )`) |
+| `$args` | array | No | Configuration options (see below) |
 
-Activate your plugin, then go toPosts > Add New. You should see a new meta box for your “Courses” Taxonomy.
+## Arguments Reference
 
-### Code Breakdown
+### Labels
 
-The following discussion breaks down the code used above describing the functions and parameters.
+Passed as an array. All labels are optional — WordPress provides defaults.
 
-The function```wporg_register_taxonomy_course```contains all the steps necessary for registering a Custom Taxonomy.
+| Label Key | Purpose |
+|-----------|---------|
+| `name` | General name for the taxonomy (plural) |
+| `singular_name` | Singular name |
+| `search_items` | Search items text |
+| `popular_items` | Popular items text (used in widget) |
+| `all_items` | All items text |
+| `parent_item` | Parent item text |
+| `parent_item_colon` | Parent item colon text |
+| `edit_item` | Edit item text |
+| `view_item` | View item text |
+| `update_item` | Update item text |
+| `add_new_item` | Add new item text |
+| `new_item_name` | New item name text |
+| `separate_items_with_commas` | Separate items text |
+| `add_or_remove_items` | Add or remove items text |
+| `choose_from_most_used` | Choose from most used text |
+| `not_found` | Not found text |
+| `no_terms` | No terms text |
+| `name_admin_bar` | Name displayed in admin bar |
 
-The```$labels```array holds the labels for the Custom Taxonomy.
-These labels will be used for displaying various information about the Taxonomy in the Administration area.
+### Configuration Options
 
-The```$args```array holds the configuration options that will be used when creating our Custom Taxonomy.
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `hierarchical` | bool | `false` | Whether taxonomy is hierarchical (like categories) or flat (like tags) |
+| `labels` | array | — | Label definitions |
+| `show_ui` | bool | Auto | Whether to generate a default UI for managing terms |
+| `show_admin_column` | bool | `false` | Display a column on the edit screen |
+| `query_var` | bool\|string | `true` (slug) | Enable query variable (e.g., `?course=appetizer`) |
+| `rewrite` | bool\|array | `array('slug' => $taxonomy)` | Permalink structure. Set `false` to disable |
+| `capabilities` | array | — | Override default capabilities for this taxonomy |
+| `default_term` | array | — | Default term: `array( 'name' => 'Uncategorized', 'description' => '' )` |
+| `sort` | bool | `false` | Whether terms are sorted alphabetically |
+| `public` | bool | Auto | Whether the taxonomy is publicly queryable |
+| `publicly_queryable` | bool | Auto | Whether it's accessible via query vars |
+| `show_in_rest` | bool | `false` | Enable REST API support |
+| `show_tagcloud` | bool | Auto | Whether to show in tag cloud widget |
+| `rest_controller_class` | string | — | Custom REST controller class name |
 
-The functionregister_taxonomy()creates a new Taxonomy with the identifier```course```for the```post```Post Type using the```$args```array for configuration.
+## Complete Example
 
-The functionadd_action()ties the```wporg_register_taxonomy_course```function execution to the```init```action hook.
+```php
+add_action( 'init', 'myplugin_register_course_taxonomy' );
 
-#### $args
+function myplugin_register_course_taxonomy() {
+    $labels = array(
+        'name'              => _x( 'Courses', 'taxonomy general name', 'text-domain' ),
+        'singular_name'     => _x( 'Course', 'taxonomy singular name', 'text-domain' ),
+        'search_items'      => __( 'Search Courses', 'text-domain' ),
+        'all_items'         => __( 'All Courses', 'text-domain' ),
+        'parent_item'       => __( 'Parent Course', 'text-domain' ),
+        'edit_item'         => __( 'Edit Course', 'text-domain' ),
+        'update_item'     => __( 'Update Course', 'text-domain' ),
+        'add_new_item'      => __( 'Add New Course', 'text-domain' ),
+        'new_item_name'     => __( 'New Course Name', 'text-domain' ),
+        'menu_name'         => __( 'Courses', 'text-domain' ),
+    );
 
-The $args array holds important configuration for the Custom Taxonomy, it instructs WordPress how the Taxonomy should work.
+    $args = array(
+        'hierarchical'      => true,
+        'labels'            => $labels,
+        'show_ui'           => true,
+        'show_admin_column' => true,
+        'query_var'         => true,
+        'rewrite'           => array( 'slug' => 'course' ),
+        'show_in_rest'      => true,
+    );
 
-Take a look atregister_taxonomy()function for a full list of accepted parameters and what each of these do.
+    register_taxonomy( 'course', array( 'post' ), $args );
+}
+```
 
-### Summary
+## Term Manipulation Functions
 
-With our Courses Taxonomy example, WordPress will automatically create an archive page and child pages for the```course```Taxonomy.
+| Function | Purpose | Signature |
+|----------|---------|-----------|
+| `wp_insert_term()` | Create a new term | `wp_insert_term( string $term, string $taxonomy, array $args = array() )` |
+| `get_term()` | Get a single term object | `get_term( int\|WP_Term $term, string $taxonomy = '' )` |
+| `get_terms()` | Get multiple terms | `get_terms( array|string $args = array() )` |
+| `edit_term()` | Hook fired when a term is edited | `add_action( 'edit_term', 'my_callback', 10, 3 )` |
+| `edited_term_taxonomy_id()` | Hook fired after term + taxonomy edited | `add_action( 'edited_term_taxonomy_id', 'my_callback', 10, 2 )` |
+| `create_term()` | Hook fired when a new term is created | `add_action( 'create_term', 'my_callback', 10, 3 )` |
+| `delete_term()` | Hook fired when a term is deleted | `add_action( 'delete_term', 'my_callback', 10, 4 )` |
+| `split_shared_term()` | Hook fired when a shared term is split (WP 4.2+) | `add_action( 'split_shared_term', 'my_callback', 10, 4 )` |
 
-The archive page will be at```/course/```with child pages spawning under it using the Term’s slug (```/course/%%term-slug%%/```).
+## Display Functions
 
-## Using Your Taxonomy
+| Function | Purpose | Signature |
+|----------|---------|-----------|
+| `the_terms()` | Display terms in a list | `the_terms( int $id, string $taxonomy, string $before = '', string $sep = '', string $after = '' )` |
+| `wp_tag_cloud()` | Display a tag cloud | `wp_tag_cloud( array|string $args = array() )` |
+| `get_the_term_list()` | Get terms as HTML (don't display) | `get_the_term_list( int $id, string $taxonomy, string $before = '', string $sep = '', string $after = '' )` |
 
-WordPress hasmanyfunctions for interacting with your Custom Taxonomy and the Terms within it.
+## Archive URLs
 
-Here are some examples:
+| Taxonomy Type | Archive URL Pattern |
+|---------------|-------------------|
+| Hierarchical (`hierarchical => true`) | `/course/`, `/course/appetizer/`, `/course/appetizer/main-course/` |
+| Flat (`hierarchical => false`) | `/course/chocolate/`, `/course/vanilla/` |
 
-- ```the_terms```: Takes a Taxonomy argument and renders the terms in a list.
-- ```wp_tag_cloud```: Takes a Taxonomy argument and renders a tag cloud of the terms.
-- ```is_taxonomy```: Allows you to determine if a given taxonomy exists.
+> **Note:** If `rewrite` is set to `false`, archive URLs are disabled. Use `?course=slug` query variable instead (if `query_var` is enabled).

@@ -1,97 +1,84 @@
-# Privacy Related Options, Hooks and Capabilities
-
-The privacy tools were originally introduced in WordPress 4.9.6. These tools are designed to allow (and encourage) developers to use them as part of the Privacy Exporter, Privacy Eraser and the Privacy Policy Guide.
-
-Since then, several newer hooks have been introduced to expand on the available capabilities. These hooks allow developers to include additional personal data in export and erasure requests, and introduce suggested content for the privacy policy guide.
-
-Along with the ability to control these tools, there are several new filters for use with the request and confirmation emails, enabling finer-grained controls over these notifications.
+# Privacy Options, Hooks and Capabilities
 
 ## Options
 
-```wp_page_for_privacy_policy```– contains the page ID of a site’s privacy page
+| Option | Type | Description |
+|--------|------|-------------|
+| `wp_page_for_privacy_policy` | int | Page ID of the site's privacy policy page |
 
 ## Actions
 
-```user_request_action_confirmed```– fired when a user confirms a privacy request
+| Hook | Purpose |
+|------|---------|
+| `user_request_action_confirmed` | Fires when a user confirms a privacy request |
+| `wp_privacy_delete_old_export_files` | Scheduled action to prune old exports from personal data folder |
+| `wp_privacy_personal_data_erased` | Fires after the last page of the last eraser is complete |
+| `wp_privacy_personal_data_export_file` | Used during export flow to create a personal data export file |
+| `wp_privacy_personal_data_export_file_created` | Fires after a personal data export file has been created |
 
-```wp_privacy_delete_old_export_files```– a scheduled action used to prune old exports from the personal data exports folder
+## Filters — Export/Eraser Registration
 
-```wp_privacy_personal_data_erased```– fired after the last page of the last eraser is complete
+| Hook | Purpose |
+|------|---------|
+| `wp_privacy_personal_data_erasers` | Register plugin eraser callbacks (key => array with `eraser_friendly_name` + `callback`) |
+| `wp_privacy_personal_data_exporters` | Register plugin exporter callbacks (key => array with `exporter_friendly_name` + `callback`) |
+| `wp_privacy_anonymize_data` | Filter anonymous data for each type |
 
-```wp_privacy_personal_data_export_file```– used to create a personal data export file as part of the export flow
+## Filters — Export Data Flow
 
-```wp_privacy_personal_data_export_file_created```– fires after a personal data export file has been created
+| Hook | Purpose |
+|------|---------|
+| `wp_privacy_personal_data_export_page` | Filter a page of exporter data; build export report |
+| `wp_privacy_personal_data_erasure_page` | Filter a page of eraser data; consume erasure response |
+| `wp_privacy_additional_user_profile_data` | Extend user profile data for the privacy exporter |
 
-## Filters
+## Filters — Email Notifications (Export)
 
-```privacy_policy_url```– filters the URL of the privacy policy page.
+| Hook | Purpose |
+|------|---------|
+| `wp_privacy_personal_data_email_content` | Modify email body sent with personal data export link |
+| `wp_privacy_personal_data_email_headers` | Filter email headers for export completion notification |
+| `wp_privacy_personal_data_email_subject` | Filter email subject for export completion notification |
+| `wp_privacy_personal_data_email_to` | Filter recipient of export email (use with caution) |
 
-```the_privacy_policy_link```– filters the privacy policy page link HTML.
+## Filters — Email Notifications (Erasure)
 
-```wp_get_default_privacy_policy_content```– filters the default content suggested for inclusion through the privacy policy guide.
+| Hook | Purpose |
+|------|---------|
+| `user_erasure_complete_email_subject` | Filter subject of erasure completion email |
+| `user_confirmed_action_email_content` | Filter body of erasure fulfillment notification |
+| `user_erasure_complete_email_headers` | Filter headers of erasure notification |
+| `user_erasure_fulfillment_email_to` | Filter recipient of erasure fulfillment notification |
 
-```user_request_action_confirmed_message```– allows modifying the action confirmation message displayed to the user
+## Filters — Request Confirmation Emails
 
-```user_request_action_description```– filters the user action description.
+| Hook | Purpose |
+|------|---------|
+| `user_request_confirmed_email_content` | Filter body of request confirmation email |
+| `user_request_confirmed_email_headers` | Filter headers of request confirmation email |
+| `user_request_confirmed_email_subject` | Filter subject of request confirmation email |
+| `user_request_confirmed_email_to` | Filter recipient of request confirmation notification |
 
-```user_request_action_email_content```– filters the text of the email sent when an account action is attempted.
+## Filters — General Privacy
 
-```user_request_action_email_headers```– filters the headers of the email sent when an account action is attempted.
-
-```user_request_action_email_subject```– filters the subject of the email sent when an account action is attempted.
-
-```user_request_confirmed_email_content```– filters the body of the user request confirmation email.
-
-```user_request_confirmed_email_headers```– filters the headers of the user request confirmation email.
-
-```user_request_confirmed_email_subject```– filters the subject of the user request confirmation email.
-
-```user_request_confirmed_email_to```– filters the recipient of the data request confirmation notification.
-
-```user_request_key_expiration```– filters the expiration time of confirmation keys for user requests.
-
-```wp_privacy_additional_user_profile_data```– filter to extend the user’s profile data for the privacy exporter.
-
-```wp_privacy_export_expiration```– controls how old export files are allowed to get, default is 3 days
-
-```wp_privacy_personal_data_email_content```– allows modifying the email message send to users with their personal data export file link
-
-```wp_privacy_personal_data_email_headers```– filters the headers of the email sent with a personal data export file.
-
-```wp_privacy_personal_data_email_subject```– filters the subject of the email sent when an export request is completed.
-
-```wp_privacy_personal_data_email_to```– filters the recipient of the personal data export email notification.```wp_privacy_personal_data_email_to```should be used with great caution to avoid sending the data export link to the wrong recipient email address(es).
-
-```wp_privacy_personal_data_erasers```– supports registration of core and plugin personal data erasers
-
-```wp_privacy_personal_data_erasure_page```– Filters a page of personal data eraser data. Allows the erasure response to be consumed by destinations in addition to Ajax.
-
-```wp_privacy_personal_data_exporters```– supports registration of core and plugin personal data exporters
-
-```wp_privacy_personal_data_export_page```– filters a page of personal data exporter data. Used to build the export report. Allows the export response to be consumed by destinations in addition to Ajax.
-
-```wp_privacy_anonymize_data```– filters the anonymous data for each type.
-
-```wp_privacy_exports_dir```– filters the directory used to store personal data export files.
-
-```wp_privacy_exports_url```– filters the URL of the directory used to store personal data export files.
-
-```user_confirmed_action_email_content```– Filters the body of the user request confirmation email. The email is sent to an administrator when an user request is confirmed.
-
-```user_erasure_fulfillment_email_to```– Filters the recipient of the data erasure fulfillment notification.
-
-```user_erasure_complete_email_subject```– Filters the subject of the email sent when an erasure request is completed.
-
-```user_confirmed_action_email_content```– Filters the body of the data erasure fulfillment notification. The email is sent to a user when a their data erasure request is fulfilled by an administrator.
-
-```user_erasure_complete_email_headers```– Filters the headers of the data erasure fulfillment notification.
+| Hook | Purpose |
+|------|---------|
+| `privacy_policy_url` | Filter the privacy policy page URL |
+| `the_privacy_policy_link` | Filter the privacy policy page link HTML |
+| `wp_get_default_privacy_policy_content` | Filter default content for privacy policy guide |
+| `user_request_action_confirmed_message` | Modify action confirmation message displayed to user |
+| `user_request_action_description` | Filter user action description |
+| `user_request_key_expiration` | Filter expiration time of confirmation keys (seconds) |
+| `wp_privacy_export_expiration` | Control how long export files are kept (default: 3 days) |
+| `wp_privacy_exports_dir` | Filter directory used to store personal data exports |
+| `wp_privacy_exports_url` | Filter URL of personal data exports directory |
 
 ## Capabilities
 
-Access to the privacy tools is controlled by a few new capabilities. Administrators (on non-multisite installations) have these capabilities by default. These capabilities are:
+| Capability | Controls |
+|------------|----------|
+| `erase_others_personal_data` | Availability of Erase Personal Data sub-menu under Tools |
+| `export_others_personal_data` | Availability of Export Personal Data sub-menu under Tools |
+| `manage_privacy_options` | Availability of Privacy sub-menu under Settings |
 
-```erase_others_personal_data```– determines if the Erase Personal Data sub-menu is available under Tools
-
-```export_others_personal_data```– determines if the Export Personal Data sub-menu is available under Tools
-
-```manage_privacy_options```– determines if the Privacy sub-menu is available under Settings
+> **Note:** Administrators have all three capabilities by default on single-site installs.

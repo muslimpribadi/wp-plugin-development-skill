@@ -1,60 +1,72 @@
 # Internationalization Security
 
-Security is often overlooked when talking about internationalization, but there are a few important things to keep in mind.
+Translatable strings are untrusted input — always escape output and validate translations.
 
-### Check for Spam and Other Malicious Strings
+## Escape All Output
 
-When a translator submits a localization to you, always check to make sure they didn’t include spam or other malicious words in their translation. You can useGoogle Translateto translate their translation back into your native language so that you can easily compare the original and translated strings.
+Never echo a translation function directly in HTML context:
 
-### Escape Internationalized Strings
+```php
+// INSECURE — translator could inject malicious code
+_e( 'Click here', 'my-plugin' );
 
-You can’t trust that a translator will only add benign text to their localization; if they want to, they could add malicious JavaScript or other code instead. To protect against that, it’s important to treat internationalized strings like you would any other untrusted input.
+// SECURE — escaped for body content
+echo esc_html__( 'Click here', 'my-plugin' );
 
-If you’re outputting the strings, then they should be escaped.
-
-Insecure:
-
-```python
-```_e( 'The REST API content endpoints were added in WordPress 4.7.', 'your-text-domain' ); ```
+// SECURE — escaped for attributes
+echo esc_attr__( 'Tooltip text', 'my-plugin' );
 ```
 
-Secure:
+### Escape Function Reference
 
-```python
-```esc_html_e( 'The REST API content endpoints were added in WordPress 4.7.', 'your-text-domain' );```
+| Context | Return | Echo |
+|---------|--------|------|
+| HTML body | `esc_html__()` | `esc_html_e()` |
+| HTML attribute | `esc_attr__()` | `esc_attr_e()` |
+| With context (body) | `esc_html_x()` | `esc_html_ex()` |
+| With context (attr) | `esc_attr_x()` | `esc_attr_ex()` |
+
+## Placeholders for URLs
+
+Never include URLs in translatable strings — a malicious translator could redirect users:
+
+```php
+// INSECURE — URL embedded in translation
+_e( 'Please <a href="https://login.wordpress.org/register">register</a>.', 'my-plugin' );
+
+// SECURE — URL passed as separate variable
+printf(
+    esc_html__( 'Please %1$sregister%2$s.', 'my-plugin' ),
+    '<a href="https://login.wordpress.org/register">',
+    '</a>'
+);
 ```
 
-Alternatively, some people choose to rely on a translation verification mechanism, rather than adding escaping to their code. One example of a verification mechanism isthe editor rolesthat the WordPress Polyglots team uses fortranslate.wordpress.org. This ensures that any translation submitted by an untrusted contributor has been verified by a trusted editor before being accepted.
+## Validate Translations
 
-### Use Placeholders for URLs
+When receiving `.po`/`.mo` files from third parties:
 
-Don’t include URLs in internationalized strings, because a malicious translator could change them to point to a different URL. Instead, use placeholders forprintf()orsprintf().
+| Check | Method |
+|-------|--------|
+| **Spam injection** | Use Google Translate to reverse-translate strings and compare with originals |
+| **Malicious code** | Search `msgstr` entries for `<script>`, `javascript:`, backticks, `$(` patterns |
+| **Compiled .mo mismatch** | Always recompile `.mo` from `.po` yourself — never trust pre-compiled binaries |
 
-Insecure:
+### Compile Your Own .mo
 
-```python
-```_e(
-	'Please <a href="https://login.wordpress.org/register"> register for a WordPress.org account</a>.',
-	'your-text-domain'
-);```
+```bash
+# Validate and compile (verbose output shows errors)
+msgfmt -cv -o /path/to/output.mo /path/to/input.po
 ```
 
-Secure:
+> **Note:** PoEdit may override `.po` headers during compilation. Command-line `msgfmt` preserves original metadata.
 
-```python
-```printf(
-	esc_html__( 'Please %1$s register for a WordPress.org account %2$s.', 'your-text-domain' ),
-	'<a href="https://login.wordpress.org/register">',
-	'</a>'
-);```
-```
+## Safe Translation Patterns Summary
 
-### Compile Your Own .mo Binaries
-
-Often translators will send the compiled .mo file along with the plaintext .po file, but you should discard their .mo file and compile your own, because you have no way of knowing whether or not it was compiled from the corresponding .po file, or a different one. If it was compiled against a different one, then it could contain spam and other malicious strings without your knowledge.
-
-Using PoEdit to generate the binary will override the headers in the .po file, so instead it’s better to compile it from the command line:
-
-```python
-```msgfmt -cv -o /path/to/output.mo /path/to/input.po```
-```
+| Pattern | Secure Version |
+|---------|---------------|
+| Simple text | `esc_html__( 'Text', 'domain' )` |
+| Text with HTML tags | Pass HTML as separate variable via `printf()` |
+| URLs | Always externalize via placeholders |
+| User-facing output | Always use escape function (`esc_html__`, `esc_attr__`) |
+| Attributes | Always use `esc_attr__()`, never `__()` |

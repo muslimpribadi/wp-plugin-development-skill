@@ -1,165 +1,160 @@
 # Top-Level Menus
 
-- Form action attribute
-- Processing the form
+## add_menu_page()
 
-## Add a Top-Level Menu
+Register a new top-level menu item in the WordPress admin sidebar.
 
-To add a new Top-level menu to WordPress Administration, use theadd_menu_page()function.
+**Hook:** `admin_menu` (priority: 999)
+**Returns:** `$hook_suffix` string (for form processing)
 
-```python
-```add_menu_page(
-    string $page_title,
-    string $menu_title,
-    string $capability,
-    string $menu_slug,
-    callable $function = '',
-    string $icon_url = '',
-    int $position = null
-);```
-```
+### Parameters
+
+| Param | Type | Required | Default | Description |
+|-------|------|----------|---------|-------------|
+| $page_title | string | Yes | — | Title displayed in browser tab |
+| $menu_title | string | Yes | — | Text displayed in menu |
+| $capability | string | Yes | — | Minimum capability required |
+| $menu_slug | string | Yes | — | Unique identifier for the page |
+| $function | callable | No | `''` | Callback that renders page HTML |
+| $icon_url | string | No | `''` | URL or Dashicons CSS (`dashicons-icon`) |
+| $position | int | No | `null` | Menu position (10=Posts, 20=Media, etc.) |
 
 ### Example
 
-Lets say we want to add a new Top-level menu called “WPOrg”.
+```php
+add_action( 'admin_menu', 'myplugin_register_menu' );
 
-The first stepwill be creating a function which will output the HTML. In this function we will perform the necessary security checks and render the options we’ve registered using theSettings API.
+function myplugin_register_menu() {
+    add_menu_page(
+        'My Plugin',          // page_title
+        'My Plugin',          // menu_title
+        'manage_options',     // capability
+        'my-plugin',          // menu_slug
+        'myplugin_render_page', // callback
+        'dashicons-admin-generic', // icon
+        20                    // position
+    );
+}
 
-We recommend wrapping your HTML using a```<div>```with a class of```wrap```.
-
-```python
-```function wporg_options_page_html() {
+function myplugin_render_page() {
+    if ( ! current_user_can( 'manage_options' ) ) {
+        return;
+    }
     ?>
     <div class="wrap">
-      <h1><?php echo esc_html( get_admin_page_title() ); ?></h1>
-      <form action="options.php" method="post">
-        <?php
-        // output security fields for the registered setting "wporg_options"
-        settings_fields( 'wporg_options' );
-        // output setting sections and their fields
-        // (sections are registered for "wporg", each field is registered to a specific section)
-        do_settings_sections( 'wporg' );
-        // output save settings button
-        submit_button( __( 'Save Settings', 'textdomain' ) );
-        ?>
-      </form>
+        <h1><?php echo esc_html( get_admin_page_title() ); ?></h1>
+        <?php myplugin_render_content(); ?>
     </div>
     <?php
-}```
+}
 ```
 
-The second stepwill be registering our WPOrg menu. The registration needs to occur during the```admin_menu```action hook.
+### Menu Position Reference
 
-```python
-```add_action( 'admin_menu', 'wporg_options_page' );
-function wporg_options_page() {
+| Position | Menu Item |
+|----------|-----------|
+| 5 | Dashboard |
+| 10 | Posts |
+| 15 | Media |
+| 20 | Pages |
+| 25 | Comments |
+| 59 | (separator) |
+| 60 | First custom item |
+
+### Using a Separate PHP File for HTML
+
+```php
+add_action( 'admin_menu', 'myplugin_register_menu' );
+
+function myplugin_register_menu() {
     add_menu_page(
-        'WPOrg',
-        'WPOrg Options',
+        'My Plugin',
+        'My Plugin',
         'manage_options',
-        'wporg',
-        'wporg_options_page_html',
-        plugin_dir_url(__FILE__) . 'images/icon_wporg.png',
-        20
-    );
-}```
-```
-
-For a list of parameters and what each do please see theadd_menu_page()in the reference.
-
-### Using a PHP File for HTML
-
-The best practice for portable code would be to create a Callback that requires/includes your PHP file.
-
-For the sake of completeness and helping you understand legacy code, we will show another way: passing a```PHP file path```as the```$menu_slug```parameter with an```null``````$function```parameter.
-
-```python
-```add_action( 'admin_menu', 'wporg_options_page' );
-function wporg_options_page() {
-    add_menu_page(
-        'WPOrg',
-        'WPOrg Options',
-        'manage_options',
-        plugin_dir_path(__FILE__) . 'admin/view.php',
+        plugin_dir_path( __FILE__ ) . 'admin/view.php',
         null,
-        plugin_dir_url(__FILE__) . 'images/icon_wporg.png',
+        'dashicons-admin-generic',
         20
     );
-}```
+}
 ```
 
-## Remove a Top-Level Menu
+## remove_menu_page()
 
-To remove a registered menu from WordPress Administration, use theremove_menu_page()function.
+Remove a registered top-level menu item.
 
-```python
-```remove_menu_page(
-    string $menu_slug
-);```
-```
+**Hook:** `admin_menu` (high priority, e.g. 99)
 
-Removing menus won’t prevent users accessing them directly.
-This should never be used as a way to restrictuser capabilities.
+### Parameters
+
+| Param | Type | Required | Description |
+|-------|------|----------|-------------|
+| $menu_slug | string | Yes | The slug of the menu to remove |
 
 ### Example
 
-Lets say we want to remove the “Tools” menu from.
+```php
+add_action( 'admin_menu', 'myplugin_remove_menus', 99 );
 
-```python
-```add_action( 'admin_menu', 'wporg_remove_options_page', 99 );
-function wporg_remove_options_page() {
+function myplugin_remove_menus() {
     remove_menu_page( 'tools.php' );
-}```
+}
 ```
 
-Make sure that the menu have been registered with the```admin_menu```hook before attempting to remove, specify a higher priority number foradd_action().
+> **Note:** Use high priority (e.g. 99) to ensure the menu is registered before removal. This does not prevent direct URL access — use capability checks for security.
 
-## Submitting forms
+## Form Submission
 
-To process the submissions of forms on options pages, you will need two things:
+### Pattern
 
-- Use the URL of the page as the```action```attribute of the form.
-- Add a hook with the slug, returned by```add_menu_page```.
+1. Capture `$hook_suffix` from `add_menu_page()` return value
+2. Hook into `load-$hook_suffix` for form processing (runs before HTML output)
+3. Verify nonce, sanitize, and redirect on success
 
-You only need to follow those steps if you are manually creating forms in the back-end. TheSettings APIis the recommended way to do this.
+```php
+add_action( 'admin_menu', 'myplugin_register_menu' );
 
-### Form action attribute
+function myplugin_register_menu() {
+    $hook_suffix = add_menu_page(
+        'My Plugin',
+        'My Plugin',
+        'manage_options',
+        'my-plugin',
+        'myplugin_render_page',
+        'dashicons-admin-generic',
+        20
+    );
 
-Use the```$menu_slug```parameter of the options page as the first parameter of```menu_page_url()```. By the function will automatically escape URL and echo it by default, so you can directly use it within the```<form>```tag:
+    // Process form before page renders
+    add_action( "load-{$hook_suffix}", 'myplugin_handle_form' );
+}
 
-```python
-```<form action="<?php menu_page_url( 'wporg' ) ?>" method="post">```
+function myplugin_handle_form() {
+    if ( ! isset( $_POST['myplugin_nonce'] ) ||
+         ! wp_verify_nonce( $_POST['myplugin_nonce'], 'myplugin_save' ) ) {
+        return;
+    }
+
+    if ( ! current_user_can( 'manage_options' ) ) {
+        wp_die( 'Insufficient permissions.' );
+    }
+
+    // Process sanitized data
+    $value = sanitize_text_field( $_POST['myplugin_setting'] );
+    update_option( 'myplugin_setting', $value );
+
+    wp_redirect( admin_url( 'admin.php?page=my-plugin&settings-updated=true' ) );
+    exit;
+}
 ```
 
-### Processing the form
+### Form Action Attribute
 
-The```$function```you specify while adding the page will only be called once it is time to display the page, which makes it inappropriate if you need to send headers (ex. redirects) back to the browser.
-
-```add_menu_page```returns a```$hookname```, and WordPress triggers the```"load-$hookname"```action before any HTML output. You can use this to assign a function, which could process the form.
-```"load-$hookname"```will be executed every time before an options page will be displayed, even when the form is not being submitted.
-
-With the return parameter and action in mind, the example from above would like this:
-
-```python
-```add_action( 'admin_menu', 'wporg_options_page' );
-function wporg_options_page() {
-	$hookname = add_menu_page(
-		'WPOrg',
-		'WPOrg Options',
-		'manage_options',
-		'wporg',
-		'wporg_options_page_html',
-		plugin_dir_url(__FILE__) . 'images/icon_wporg.png',
-		20
-	);
-
-	add_action( 'load-' . $hookname, 'wporg_options_page_submit' );
-}```
+```php
+<form action="<?php echo esc_url( menu_page_url( 'my-plugin' ) ); ?>" method="post">
+    <?php wp_nonce_field( 'myplugin_save', 'myplugin_nonce' ); ?>
+    <!-- form fields -->
+</form>
 ```
 
-You can program```wporg_options_page_submit```according to your needs, but keep in mind that you must manually perform all necessary checks, including:
-
-- Whether the form is being submitted (```'POST' === $_SERVER['REQUEST_METHOD']```).
-- CSRF verification
-- Validation
-- Sanitization
+> **Note:** Use `esc_url()` when outputting the action attribute. `menu_page_url()` escapes and echoes by default, so use `menu_page_url( 'slug', false )` if you need the raw URL.
