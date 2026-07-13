@@ -1,0 +1,9 @@
+# Generated files
+*.pyc
+__pycache__/
+*.swp
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
