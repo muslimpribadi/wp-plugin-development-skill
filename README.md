@@ -86,9 +86,9 @@ This skill enforces a security-first approach:
 - WordPress 6.0+
 - Python 3.8+ (for security validator script)
 
-## Citation
+## Acknowledgements
 
-If you use this skill in your research or project, please cite the Qwen model:
+This skill was built with assistance from [Qwen3.6-35B-A3B](https://qwen.ai/blog?id=qwen3.6-35b-a3b):
 
 ```bibtex
 @misc{qwen36_35b_a3b,
