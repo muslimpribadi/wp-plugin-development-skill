@@ -90,6 +90,20 @@ Keterampilan ini menerapkan pendekatan keamanan-first:
 
 GPL-2.0+ — Lisensi yang sama dengan WordPress itu sendiri.
 
+## Pengakuan
+
+Keterampilan ini dibangun dengan bantuan [Qwen3.6-35B-A3B](https://qwen.ai/blog?id=qwen3.6-35b-a3b):
+
+```bibtex
+@misc{qwen36_35b_a3b,
+    title = {{Qwen3.6-35B-A3B}: Agentic Coding Power, Now Open to All},
+    url = {https://qwen.ai/blog?id=qwen3.6-35b-a3b},
+    author = {{Qwen Team}},
+    month = {April},
+    year = {2026}
+}
+```
+
 ## Penulis
 
 - [M.Pribadi](https://github.com/muslimpribadi)
