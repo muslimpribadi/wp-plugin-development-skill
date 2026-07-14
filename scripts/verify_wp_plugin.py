@@ -50,17 +50,17 @@ SEVERITY_ORDER = {"low": 0, "medium": 1, "high": 2, "critical": 3}
 # Input-type-specific sanitizer mapping (from /references/plugin-security/data-validation.md)
 # ---------------------------------------------------------------------------
 SANITIZER_MAP = {
-    r"\\$_POST\[.*(?:email|mail)\]": ["sanitize_email", "is_email"],
-    r"\\$_POST\[.*(?:url|website)\]": ["esc_url_raw", "esc_url"],
-    r"\\$_GET\[.*(?:s|search|keyword)\]": ["sanitize_text_field", "sanitize_key"],
-    r"\\$_POST\[.*(?:file|upload|attachment)\]": ["sanitize_file_name", "finfo_open"],
-    r"\\$_POST\[.*(?:textarea|content|message|comment)\]": [
+    r"\$_POST\[\S*email\S*\]": ["sanitize_email", "is_email"],
+    r"\$_POST\[\S*(?:url|website)\S*\]": ["esc_url_raw", "esc_url"],
+    r"\$_GET\[\S*(?:s|search|keyword)\S*\]": ["sanitize_text_field", "sanitize_key"],
+    r"\$_POST\[\S*(?:file|upload|attachment)\S*\]": ["sanitize_file_name", "finfo_open"],
+    r"\$_POST\[\S*(?:textarea|content|message|comment)\S*\]": [
         "sanitize_textarea_field", "wp_kses_post", "wp_kses", "sanitize_text_field"
     ],
-    r"\\$_POST\[.*(?:name|title|label)\]": ["sanitize_text_field", "sanitize_title"],
-    r"\\$_GET\[.*id\]": ["absint", "intval", "sanitize_key"],
-    r"\\$_POST\[.*id\]": ["absint", "intval", "sanitize_key"],
-    r"\\$_COOKIE\[.*\]": ["sanitize_text_field", "sanitize_key"],
+    r"\$_POST\[\S*(?:name|title|label)\S*\]": ["sanitize_text_field", "sanitize_title"],
+    r"\$_GET\[.*id\]": ["absint", "intval", "sanitize_key"],
+    r"\$_POST\[.*id\]": ["absint", "intval", "sanitize_key"],
+    r"\$_COOKIE\[.*\]": ["sanitize_text_field", "sanitize_key"],
 }
 
 # Generic sanitizers accepted when no specific input-type pattern matches
@@ -279,15 +279,13 @@ def _check_output_escaping(line: str, check_cfg: dict) -> bool:
 
 def _check_unprepared_sql(lines: list[str], idx: int, check_cfg: dict) -> bool:
     """Check 3 — $wpdb query without prepare()."""
-    if not re.search(check_cfg["query_pattern"], lines[idx]):
+    line_idx = idx - 1  # Convert 1-indexed to 0-indexed
+    if not re.search(check_cfg["query_pattern"], lines[line_idx]):
         return False
-    # Look back up to 20 chars for prepare() on the same line
-    if re.search(check_cfg["prepare_pattern"], lines[idx]):
+    # Look for prepare() on the same line
+    if re.search(check_cfg["prepare_pattern"], lines[line_idx]):
         return False
-    # Look forward up to 15 lines for prepare() wrapping this call
-    for j in range(idx, min(idx + 15, len(lines))):
-        if re.search(check_cfg["prepare_pattern"], lines[j]):
-            return False
+
     return True
 
 
@@ -308,9 +306,10 @@ def _check_debug_output(line: str, check_cfg: dict) -> bool:
 
 def _check_nonce(lines: list[str], idx: int, check_cfg: dict) -> bool:
     """Check 4 — function with $_POST/$_GET but no nonce check in body."""
-    if not re.match(r"\s*function\s+", lines[idx]) and not re.match(r"\s*def\s+\w+\s*\(", lines[idx]):
+    line_idx = idx - 1  # Convert 1-indexed to 0-indexed
+    if not re.match(r"\s*function\s+", lines[line_idx]) and not re.match(r"\s*def\s+\w+\s*\(", lines[line_idx]):
         return False
-    _, body = _find_function_body(lines, idx)
+    _, body = _find_function_body(lines, line_idx)
     has_trigger = any(re.search(p, body) for p in check_cfg["body_patterns"])
     has_nonce = any(
         re.search(p, body[:check_cfg["scan_window"]])
@@ -321,9 +320,10 @@ def _check_nonce(lines: list[str], idx: int, check_cfg: dict) -> bool:
 
 def _check_capability(lines: list[str], idx: int, check_cfg: dict) -> bool:
     """Check 5 — function with privileged ops but no capability check."""
-    if not re.match(r"\s*function\s+", lines[idx]) and not re.match(r"\s*def\s+\w+\s*\(", lines[idx]):
+    line_idx = idx - 1  # Convert 1-indexed to 0-indexed
+    if not re.match(r"\s*function\s+", lines[line_idx]) and not re.match(r"\s*def\s+\w+\s*\(", lines[line_idx]):
         return False
-    _, body = _find_function_body(lines, idx)
+    _, body = _find_function_body(lines, line_idx)
     has_trigger = any(re.search(p, body) for p in check_cfg["body_patterns"])
     has_cap = any(
         re.search(p, body[:check_cfg["scan_window"]])
@@ -334,18 +334,27 @@ def _check_capability(lines: list[str], idx: int, check_cfg: dict) -> bool:
 
 def _check_rest_permission(lines: list[str], idx: int, check_cfg: dict) -> bool:
     """Check 9 — register_rest_route without permission_callback."""
-    if not re.search(check_cfg["regex"], lines[idx]):
+    line_idx = idx - 1  # Convert 1-indexed to 0-indexed
+    if not re.search(check_cfg["regex"], lines[line_idx]):
         return False
-    context = "\n".join(lines[idx : idx + 11])
+    context = "\n".join(lines[line_idx : line_idx + 11])
     return check_cfg["required_in_context"] not in context
 
 
 def _check_file_upload_mime(lines: list[str], idx: int, check_cfg: dict) -> bool:
-    """Check 10 — $_FILES usage without MIME validation."""
-    has_files = any(re.search(p, lines[idx]) for p in check_cfg["trigger_patterns"])
+    """Check 10 — $_FILES usage without MIME validation.
+
+    Looks both backward and forward for MIME check (finfo_open, mime_content_type).
+    The MIME validation may appear before or after the $_FILES usage.
+    """
+    line_idx = idx - 1  # Convert 1-indexed to 0-indexed
+    has_files = any(re.search(p, lines[line_idx]) for p in check_cfg["trigger_patterns"])
     if not has_files:
         return False
-    window = "\n".join(lines[idx : idx + check_cfg["scan_window"]])
+    # Look both backward and forward from the $_FILES line
+    start = max(0, line_idx - check_cfg["scan_window"])
+    end = min(len(lines), line_idx + check_cfg["scan_window"])
+    window = "\n".join(lines[start:end])
     has_mime_check = any(
         re.search(p, window) for p in check_cfg["required_in_window"]
     )
@@ -371,8 +380,11 @@ def _check_context_escape_mismatch(line: str, check_cfg: dict) -> bool:
     line_lower = line.lower()
 
     for context_keyword, required_escape in check_cfg["patterns"].items():
-        if context_keyword in line_lower:
-            # Check if the required escape is present
+        # Split pipe-separated keywords and check if ANY appear in the line
+        keywords = [k.strip() for k in context_keyword.split("|")]
+        has_any_keyword = any(kw in line_lower for kw in keywords)
+        if has_any_keyword:
+            # Check if the required escape function is present
             if not re.search(required_escape, line):
                 return True
     return False
@@ -409,7 +421,7 @@ def check_file(filepath: Path) -> list[dict]:
     issues: list[dict] = []
     seen: set[tuple[int, str]] = set()  # Deduplicate (line, check_key)
 
-    for idx, line in enumerate(lines):
+    for idx, line in enumerate(lines, start=1):
         line_no = idx + 1  # 1-based display number
 
         if _is_comment_line(line):
@@ -426,8 +438,7 @@ def check_file(filepath: Path) -> list[dict]:
             try:
                 result = handler(lines, idx, check_cfg) if key in (
                     "unprepared_sql", "missing_nonce", "missing_capability",
-                    "missing_rest_permission", "file_upload_no_mime_check",
-                    "context_escape_mismatch"
+                    "missing_rest_permission", "file_upload_no_mime_check"
                 ) else handler(line, check_cfg)
 
                 if result:
@@ -467,7 +478,7 @@ def main() -> None:
     # Parse optional arguments
     args = sys.argv[1:]
     target_path = None
-    exclude_patterns = ["vendor/", "tests/", "node_modules/", "test/", ".git/"]
+    exclude_patterns = ["vendor/", "tests/", "node_modules/", "*.test.php", "*.spec.php", ".git/"]
     severity_filter = None
     show_summary = False
 
