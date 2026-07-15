@@ -356,7 +356,7 @@ Reference these sections only when the plugin's goals require them. Use the look
 | Manage user roles & caps | `references/users/` | `add_role()`, `add_cap()`, capability mapping |
 | Enqueue JS/CSS assets | `references/javascript/` | `wp_enqueue_script()`, `wp_localize_script()` |
 | Handle privacy/export data | `references/privacy/` | Privacy policies, export/erase hooks |
-| Create Gutenberg blocks | `references/block-editor/` | Blocks, block.json, editor UI, static/dynamic render |
+| Create Gutenberg blocks | `references/block-editor/` | Blocks, block.json, editor UI, static/dynamic render, JavaScript packages @wordpress/scripts @wordpress/create-block |
 | Plugin readme & WP.org prep | `references/metadata/` | `readme.txt` fields, WP.org guidelines |
 
 ### Block Editor Development
@@ -547,6 +547,24 @@ function myplugin_render_dynamic( array $attributes, string $content ): string {
 | **Build Process** (Webpack/Vite) | `npm run build` compiles JSX → JS + SCSS → CSS | Standard block development |
 | **No Build** (`wp-scripts start`) | Live-reload dev server | Rapid prototyping |
 | **Inline `<script>`** | Enqueued directly in admin page, no build step | Simple scripts, small plugins |
+
+##### Build Configuration & Packaging
+
+Every block editor plugin scaffolded using `@wordpress/create-block` must include a standardized `package.json` to ensure consistent build and deployment workflows:
+
+**Standard Scripts Object:**
+```json
+{
+    "scripts": {
+        "build": "wp-scripts build",
+        "start": "wp-scripts start",
+        "plugin-zip": "wp-scripts plugin-zip"
+    }
+}
+```
+
+- **`plugin-zip`:** Always include this command. It uses `@wordpress/scripts` to generate a production-ready `.zip` for WordPress plugin installation.
+- **Customization:** Flags like `--no-root-folder` or `--root-folder <name>` can be passed directly in the script string (e.g., `"plugin-zip": "wp-scripts plugin-zip --no-root-folder"`).
 
 #### Standalone Block Editor
 
