@@ -11,9 +11,9 @@ description: >
 license: GPL-2.0+
 compatibility: Requires PHP 8.2+, WordPress 6.4+ environment
 metadata:
-  author: Terra Coder
-  version: 1.0.0
-  source: wp_plugin_handbook
+  author: M. Pribadi, LUNA bot
+  version: 1.3.0
+  source: wp plugin handbook, wp block editor handbook
 ---
 
 # WordPress Plugin Development Skill
