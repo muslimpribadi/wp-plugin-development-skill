@@ -85,7 +85,7 @@ Keterampilan ini menerapkan pendekatan keamanan-first:
 
 - **PHP 8.2+** — Semua contoh kode menggunakan sintaks PHP modern (array pendek, parameter bertipe)
 - WordPress 6.0+
-- Python 3.8+ (untuk skrip pemindai keamanan)
+- Python 3.8+ (opsional untuk skrip pemindai keamanan)
 
 ## Lisensi
 

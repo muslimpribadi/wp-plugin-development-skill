@@ -85,7 +85,7 @@ This skill enforces a security-first approach:
 
 - **PHP 8.2+** — All code examples use modern PHP syntax (short arrays, typed parameters)
 - WordPress 6.0+
-- Python 3.8+ (for security validator script)
+- Python 3.8+ (optional for security validator script)
 
 ## Acknowledgements
 
