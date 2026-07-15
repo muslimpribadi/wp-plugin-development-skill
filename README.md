@@ -40,9 +40,9 @@ wp-plugin-development-skill/
 │   ├── metadata/                     # readme.txt & WP.org prep
 │   ├── plugin-security/              # Sanitization, nonces, escaping
 │   ├── admin-menus/                  # Admin page creation
+│   ├── block-editor/                 # Block editor & custom blocks
 │   ├── hooks/                        # Action/filter workflows
 │   ├── settings/                     # Settings API patterns
-│   └── ...                           # (and more)
 ├── scripts/
 │   └── verify_wp_plugin.py           # Automated security scanner
 └── .gitignore
@@ -58,6 +58,7 @@ wp-plugin-development-skill/
 - Admin menu creation
 - Settings API implementation
 - Shortcode development
+- Block Editor & Custom Blocks
 
 ### Extended Topics (As Needed)
 - Custom post types & taxonomies
@@ -82,7 +83,7 @@ This skill enforces a security-first approach:
 
 ## Requirements
 
-- PHP 7.4+
+- **PHP 8.2+** — All code examples use modern PHP syntax (short arrays, typed parameters)
 - WordPress 6.0+
 - Python 3.8+ (for security validator script)
 

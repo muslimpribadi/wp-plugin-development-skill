@@ -40,9 +40,9 @@ wp-plugin-development-skill/
 │   ├── metadata/                     # readme.txt & persiapan WP.org
 │   ├── plugin-security/              # Sanitasi, nonce, pelarian
 │   ├── admin-menus/                  # Pembuatan halaman admin
+│   ├── block-editor/                 # Block editor & custom blocks
 │   ├── hooks/                        # Pola action/filter
 │   ├── settings/                     # Pola Settings API
-│   └── ...                           # (dan lainnya)
 ├── scripts/
 │   └── verify_wp_plugin.py           # Pemindai keamanan otomatis
 └── .gitignore
@@ -58,6 +58,7 @@ wp-plugin-development-skill/
 - Pembuatan menu admin
 - Implementasi Settings API
 - Pengembangan shortcode
+- Block Editor & Custom Blocks
 
 ### Topik Lanjutan (Sesuai Kebutuhan)
 - Custom post types & taksonomi
@@ -82,7 +83,7 @@ Keterampilan ini menerapkan pendekatan keamanan-first:
 
 ## Persyaratan
 
-- PHP 7.4+
+- **PHP 8.2+** — Semua contoh kode menggunakan sintaks PHP modern (array pendek, parameter bertipe)
 - WordPress 6.0+
 - Python 3.8+ (untuk skrip pemindai keamanan)
 
