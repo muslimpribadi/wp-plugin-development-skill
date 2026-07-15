@@ -40,7 +40,6 @@ wp-plugin-development-skill/
 │   ├── metadata/                     # readme.txt & persiapan WP.org
 │   ├── plugin-security/              # Sanitasi, nonce, pelarian
 │   ├── admin-menus/                  # Pembuatan halaman admin
-│   ├── block-editor/                 # Blok kustom & editor
 │   ├── hooks/                        # Pola action/filter
 │   ├── settings/                     # Pola Settings API
 │   └── ...                           # (dan lainnya)
@@ -59,14 +58,6 @@ wp-plugin-development-skill/
 - Pembuatan menu admin
 - Implementasi Settings API
 - Pengembangan shortcode
-
-### Pola Modern PHP 8.2+ (Diterapkan)
-- **Sintaks array pendek** — `[]` bukan `array()`
-- **Parameter bertipe** — Petunjuk tipe pada semua parameter fungsi
-- **Deklarasi tipe pengembalian** — `: void`, `: string`, `: array`, dll.
-- **Mode tipe ketat** — `declare(strict_types=1)` disarankan
-- **Ekspresi match** — Di mana sesuai untuk kondisional yang lebih bersih
-- **Argumen bernama** — Untuk keterbacaan yang lebih baik dalam panggilan fungsi kompleks
 
 ### Topik Lanjutan (Sesuai Kebutuhan)
 - Custom post types & taksonomi
@@ -91,7 +82,7 @@ Keterampilan ini menerapkan pendekatan keamanan-first:
 
 ## Persyaratan
 
-- **PHP 8.2+** — Semua contoh kode menggunakan sintaks PHP modern (array pendek, parameter bertipe, tipe ketat)
+- PHP 7.4+
 - WordPress 6.0+
 - Python 3.8+ (untuk skrip pemindai keamanan)
 
