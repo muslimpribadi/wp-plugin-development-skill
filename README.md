@@ -1,52 +1,12 @@
-# WordPress Plugin Development Skill
+# WP Plugin Development Skill
 
-An expert AI agent skill for creating secure, well-structured WordPress plugins following WP.org standards.
+A comprehensive AI agent skill for building secure, production-ready WordPress plugins.
 
-## Overview
+## Requirements
 
-> 🔗 **New to AI Agent Skills?** If you're unfamiliar with how `SKILL.md` files work, how agents discover and load them, or want to learn more about building your own skills — start at **[agentskills.io/home](https://agentskills.io/home)**. It's the central hub for understanding the skill ecosystem, from installation to advanced customization.
-
-This skill package provides everything needed to develop production-ready WordPress plugins — from scaffolding and security checklists to advanced patterns like REST APIs, custom post types, and cron scheduling. It's designed for AI agents but can also serve as a reference guide for developers.
-
-> **Source:** This skill is derived and optimized from the [WordPress.org official Plugin Handbook](https://developer.wordpress.org/plugins/) (Last updated December 14, 2023). Content has been restructured for AI agent consumption with progressive disclosure, actionable checklists, and automated validation patterns.
-
-## Quick Start
-
-1. **Review the `SKILL.md`** — This is the main instruction file that guides plugin creation step-by-step.
-2. **Bootstrap from the skeleton** — Copy `assets/plugin-skeleton/` and rename to your plugin slug.
-3. **Run the security validator** — Use `scripts/verify_wp_plugin.py` to scan generated code for common vulnerabilities.
-
-## Structure
-
-```
-wp-plugin-development-skill/
-├── SKILL.md                          # Main skill definition & instructions
-├── assets/
-│   └── plugin-skeleton/              # Working plugin template
-│       ├── my-plugin.php             # Main file with full scaffolding
-│       ├── uninstall.php             # Cleanup on deletion
-│       └── README.md                 # Skeleton usage guide
-├── references/                       # Extended topic guides (19 subdirs)
-│   ├── custom-post-types/            # CPT registration patterns
-│   ├── taxonomies/                   # Custom taxonomies
-│   ├── rest-api/                     # REST endpoint creation
-│   ├── cron/                         # Scheduled task patterns
-│   ├── internationalization/         # Translation & i18n
-│   ├── http-api/                     # External HTTP requests
-│   ├── database/                     # $wpdb, $dbDelta, queries
-│   ├── users/                        # Roles, capabilities
-│   ├── javascript/                   # Asset enqueueing
-│   ├── privacy/                      # Privacy/export hooks
-│   ├── metadata/                     # readme.txt & WP.org prep
-│   ├── plugin-security/              # Sanitization, nonces, escaping
-│   ├── admin-menus/                  # Admin page creation
-│   ├── hooks/                        # Action/filter workflows
-│   ├── settings/                     # Settings API patterns
-│   └── ...                           # (and more)
-├── scripts/
-│   └── verify_wp_plugin.py           # Automated security scanner
-└── .gitignore
-```
+- **PHP 8.2+** — All code examples use modern PHP syntax (short arrays, typed parameters, strict types)
+- WordPress 6.0+
+- Python 3.8+ (for security validator script)
 
 ## What's Covered
 
@@ -59,17 +19,21 @@ wp-plugin-development-skill/
 - Settings API implementation
 - Shortcode development
 
-### Extended Topics (As Needed)
+### PHP 8.2+ Modern Patterns (Enforced)
+- **Short array syntax** — `[]` instead of `array()`
+- **Typed parameters** — Type hints on all function parameters
+- **Return type declarations** — `: void`, `: string`, `: array`, etc.
+- **Strict types mode** — `declare(strict_types=1)` recommended
+- **Match expressions** — Where appropriate for cleaner conditionals
+- **Named arguments** — For improved readability in complex function calls
+
+### Advanced Topics
+- REST API endpoints & controllers
 - Custom post types & taxonomies
-- REST API endpoints
-- Cron scheduling
-- Internationalization (i18n)
+- Database operations & table creation
 - HTTP API integration
-- Custom database tables
-- User roles & capabilities
-- JavaScript/CSS enqueueing
-- Privacy compliance
-- WP.org submission prep
+- Internationalization (i18n)
+- Cron job scheduling
 
 ## Security Features
 
@@ -80,35 +44,50 @@ This skill enforces a security-first approach:
 - **Gotchas section** — Common WP pitfalls to avoid
 - **Automated scanner** — `verify_wp_plugin.py` detects unsanitized input, unescaped output, missing nonces, and SQL injection risks
 
-## Requirements
+## Project Structure
 
-- PHP 7.4+
-- WordPress 6.0+
-- Python 3.8+ (for security validator script)
-
-## Acknowledgements
-
-This skill was built with assistance from [Qwen3.6-35B-A3B](https://qwen.ai/blog?id=qwen3.6-35b-a3b):
-
-```bibtex
-@misc{qwen36_35b_a3b,
-    title = {{Qwen3.6-35B-A3B}: Agentic Coding Power, Now Open to All},
-    url = {https://qwen.ai/blog?id=qwen3.6-35b-a3b},
-    author = {{Qwen Team}},
-    month = {April},
-    year = {2026}
-}
+```
+wp-plugin-development-skill/
+├── SKILL.md          # Main skill instructions (enforces all rules)
+├── README.md         # This file
+├── references/       # Topic-specific reference guides with code examples
+│   ├── admin-menus/
+│   ├── block-editor/
+│   ├── cron/
+│   ├── custom-post-types/
+│   ├── database/
+│   ├── hooks/
+│   ├── http-api/
+│   ├── internationalization/
+│   ├── javascript/
+│   ├── metadata/
+│   ├── plugin-basics/
+│   ├── plugin-security/
+│   ├── privacy/
+│   ├── rest-api/
+│   ├── settings/
+│   ├── shortcodes/
+│   ├── taxonomies/
+│   └── users/
+├── assets/           # Plugin skeleton template with full implementation examples
+│   └── plugin-skeleton/
+└── verify_wp_plugin.py  # Automated security & PHP linting scanner
 ```
 
-## License
+## Usage
 
-GPL-2.0+ — Same license as WordPress itself.
+1. Install the skill in your AI agent configuration
+2. Reference `SKILL.md` for all development rules and enforcement policies
+3. Use reference guides in `references/` for topic-specific examples
+4. Use `assets/plugin-skeleton/` as a starting template for new plugins
+5. Run `verify_wp_plugin.py <file.php>` to check security compliance
 
-## Authors
+## Security Checklist (Enforced)
 
-- [M.Pribadi](https://github.com/muslimpribadi)
-- [LUNA bot](https://github.com/luna-bot-agent)
-
----
-
-*For AI agent usage, the `SKILL.md` file is the entry point. Reference subdirectories are loaded on-demand based on plugin requirements.*
+Every plugin MUST include:
+- [ ] Sanitize ALL input (`sanitize_text_field`, `absint`, etc.)
+- [ ] Escape ALL output (`esc_html`, `esc_attr`, `esc_url`)
+- [ ] Verify nonces on all form submissions
+- [ ] Check user capabilities before admin actions
+- [ ] Use `$wpdb->prepare()` for all SQL queries
+- [ ] No direct database access without proper escaping
