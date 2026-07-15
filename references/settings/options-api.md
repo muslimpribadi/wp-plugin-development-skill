@@ -35,11 +35,11 @@ $value = get_option( 'my_plugin_key' );
 
 ```php
 // Store as a single array option
-update_option( 'my_plugin_settings', array(
+update_option( 'my_plugin_settings', [
     'title'   => 'My Plugin',
     'enabled' => true,
     'count'   => 42,
-) );
+] );
 
 // Retrieve and access
 $settings = get_option( 'my_plugin_settings' );

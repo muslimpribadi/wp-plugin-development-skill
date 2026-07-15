@@ -20,7 +20,7 @@ add_filter( string $hook_name, callable $callback, int $priority = 10, int $acce
 ```php
 add_filter( 'the_title', 'myplugin_prefix_title' );
 
-function myplugin_prefix_title( $title ) {
+function myplugin_prefix_title( string $title ): string {
     return 'Featured: ' . $title;
 }
 ```
@@ -30,7 +30,7 @@ function myplugin_prefix_title( $title ) {
 ```php
 add_filter( 'body_class', 'myplugin_add_body_class' );
 
-function myplugin_add_body_class( $classes ) {
+function myplugin_add_body_class( array $classes ): array {
     if ( ! is_admin() ) {
         $classes[] = 'myplugin-theme';
     }

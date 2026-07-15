@@ -20,7 +20,7 @@ add_action( string $hook_name, callable $callback, int $priority = 10, int $acce
 ```php
 add_action( 'init', 'myplugin_init_callback' );
 
-function myplugin_init_callback() {
+function myplugin_init_callback(): void {
     // Runs on WordPress init
 }
 ```
@@ -43,7 +43,7 @@ If the action passes multiple arguments, specify `$accepted_args`:
 // Hook receives: $post_id, $post object
 add_action( 'save_post', 'myplugin_save_handler', 10, 2 );
 
-function myplugin_save_handler( $post_id, $post ) {
+function myplugin_save_handler( int $post_id, WP_Post $post ): void {
     // Process post data
 }
 ```

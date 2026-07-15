@@ -24,7 +24,7 @@ Register a new top-level menu item in the WordPress admin sidebar.
 ```php
 add_action( 'admin_menu', 'myplugin_register_menu' );
 
-function myplugin_register_menu() {
+function myplugin_register_menu(): void {
     add_menu_page(
         'My Plugin',          // page_title
         'My Plugin',          // menu_title
@@ -36,7 +36,7 @@ function myplugin_register_menu() {
     );
 }
 
-function myplugin_render_page() {
+function myplugin_render_page(): void {
     if ( ! current_user_can( 'manage_options' ) ) {
         return;
     }
@@ -66,7 +66,7 @@ function myplugin_render_page() {
 ```php
 add_action( 'admin_menu', 'myplugin_register_menu' );
 
-function myplugin_register_menu() {
+function myplugin_register_menu(): void {
     add_menu_page(
         'My Plugin',
         'My Plugin',
@@ -96,7 +96,7 @@ Remove a registered top-level menu item.
 ```php
 add_action( 'admin_menu', 'myplugin_remove_menus', 99 );
 
-function myplugin_remove_menus() {
+function myplugin_remove_menus(): void {
     remove_menu_page( 'tools.php' );
 }
 ```
@@ -114,7 +114,7 @@ function myplugin_remove_menus() {
 ```php
 add_action( 'admin_menu', 'myplugin_register_menu' );
 
-function myplugin_register_menu() {
+function myplugin_register_menu(): void {
     $hook_suffix = add_menu_page(
         'My Plugin',
         'My Plugin',
@@ -129,7 +129,7 @@ function myplugin_register_menu() {
     add_action( "load-{$hook_suffix}", 'myplugin_handle_form' );
 }
 
-function myplugin_handle_form() {
+function myplugin_handle_form(): void {
     if ( ! isset( $_POST['myplugin_nonce'] ) ||
          ! wp_verify_nonce( $_POST['myplugin_nonce'], 'myplugin_save' ) ) {
         return;
@@ -140,7 +140,7 @@ function myplugin_handle_form() {
     }
 
     // Process sanitized data
-    $value = sanitize_text_field( $_POST['myplugin_setting'] );
+    $value = sanitize_text_field( $_POST['myplugin_setting'] ?? '' );
     update_option( 'myplugin_setting', $value );
 
     wp_redirect( admin_url( 'admin.php?page=my-plugin&settings-updated=true' ) );

@@ -5,38 +5,38 @@
 Define the structure of your API responses using JSON Schema. Register via the `'schema'` key in `register_rest_route()`:
 
 ```php
-register_rest_route( 'my-plugin/v1', '/items/(?P<id>\d+)', array(
+register_rest_route( 'my-plugin/v1', '/items/(?P<id>\d+)', [
     'methods'  => WP_REST_Server::READABLE,
     'callback' => 'myplugin_get_item',
     'schema'   => 'myplugin_get_item_schema',
-) );
+] );
 
-function myplugin_get_item_schema() {
-    return array(
+function myplugin_get_item_schema(): array {
+    return [
         '$schema'    => 'http://json-schema.org/draft-04/schema#',
         'title'      => 'item',
         'type'       => 'object',
-        'properties' => array(
-            'id' => array(
+        'properties' => [
+            'id' => [
                 'description' => 'Unique identifier.',
                 'type'        => 'integer',
-                'context'     => array( 'view', 'edit', 'embed' ),
+                'context'     => [ 'view', 'edit', 'embed' ],
                 'readonly'    => true,
-            ),
-            'title' => array(
+            ],
+            'title' => [
                 'description' => 'The item title.',
                 'type'        => 'string',
-                'context'     => array( 'view', 'edit' ),
-            ),
-            'content' => array(
+                'context'     => [ 'view', 'edit' ],
+            ],
+            'content' => [
                 'description' => 'Full content.',
                 'type'        => 'string',
                 'format'      => 'html',
-                'context'     => array( 'edit' ),
+                'context'     => [ 'edit' ],
                 'readonly'    => true,
-            ),
-        ),
-    );
+            ],
+        ],
+    ];
 }
 ```
 
@@ -65,13 +65,13 @@ function myplugin_get_item_schema() {
 
 ```php
 // Only shown when context='view' (public API)
-'id' => array( 'context' => array( 'view', 'embed' ) ),
+'id' => [ 'context' => [ 'view', 'embed' ] ],
 
 // Hidden from public, only for logged-in users
-'internal_status' => array( 'context' => array( 'edit' ) ),
+'internal_status' => [ 'context' => [ 'edit' ] ],
 
 // Always included
-'name' => array( 'context' => array( 'view', 'edit', 'embed' ) ),
+'name' => [ 'context' => [ 'view', 'edit', 'embed' ] ],
 ```
 
 ## Argument Schema
@@ -79,15 +79,15 @@ function myplugin_get_item_schema() {
 Define validation schemas for endpoint parameters (see `routes-endpoints.md` for full example):
 
 ```php
-'args' => array(
-    'category' => array(
+'args' => [
+    'category' => [
         'description'       => 'Filter by category slug',
         'type'              => 'string',
-        'enum'              => array( 'news', 'reviews', 'tutorials' ),
+        'enum'              => [ 'news', 'reviews', 'tutorials' ],
         'validate_callback' => 'rest_validate_request_arg',
         'sanitize_callback' => 'sanitize_key',
-    ),
-),
+    ],
+],
 ```
 
 ### Built-in Validation & Sanitization Functions

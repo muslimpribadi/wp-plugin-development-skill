@@ -7,22 +7,22 @@ Register a custom post type using `register_post_type()`. Must be called on the 
 ```php
 add_action( 'init', 'myplugin_register_product_cpt' );
 
-function myplugin_register_product_cpt() {
-    register_post_type( 'product', array(
-        'labels'      => array(
+function myplugin_register_product_cpt(): void {
+    register_post_type( 'product', [
+        'labels'      => [
             'name'          => __( 'Products', 'myplugin' ),
             'singular_name' => __( 'Product', 'myplugin' ),
-        ),
+        ],
         'public'      => true,
         'has_archive' => true,
-    ) );
+    ] );
 }
 ```
 
 ## register_post_type() Parameters
 
 ```php
-register_post_type( string $post_type, array|string $args = array() )
+register_post_type( string $post_type, array|string $args = [] )
 ```
 
 | Parameter | Type | Required | Description |
@@ -41,7 +41,7 @@ register_post_type( string $post_type, array|string $args = array() )
 | `menu_icon` | string | — | Dashicon CSS (`dashicons-admin-post`) or image URL. Position in admin menu. |
 | `menu_position` | int | `null` | Menu order (see Menu Position Reference below) |
 | `show_in_rest` | bool | `false` | Enable Gutenberg REST API support |
-| `rewrite` | array\|bool | `true` | Permalink structure. `array('slug' => 'products')` or `false` to disable. |
+| `rewrite` | array\|bool | `true` | Permalink structure. `[ 'slug' => 'products' ]` or `false` to disable. |
 
 ### Menu Position Reference
 
@@ -69,16 +69,16 @@ register_post_type( string $post_type, array|string $args = array() )
 ```php
 add_action( 'init', 'myplugin_register_product_cpt' );
 
-function myplugin_register_product_cpt() {
-    register_post_type( 'product', array(
-        'labels'      => array(
+function myplugin_register_product_cpt(): void {
+    register_post_type( 'product', [
+        'labels'      => [
             'name'          => __( 'Products', 'myplugin' ),
             'singular_name' => __( 'Product', 'myplugin' ),
-        ),
+        ],
         'public'      => true,
         'has_archive' => true,
-        'rewrite'     => array( 'slug' => 'shop/products' ),
-    ) );
+        'rewrite'     => [ 'slug' => 'shop/products' ],
+    ] );
 }
 ```
 
@@ -91,8 +91,8 @@ URL structure: `http://example.com/shop/products/product-slug/`
 ```php
 add_action( 'init', 'myplugin_register_product_cpt' );
 
-function myplugin_register_product_cpt() {
-    $labels = array(
+function myplugin_register_product_cpt(): void {
+    $labels = [
         'name'               => __( 'Products', 'myplugin' ),
         'singular_name'      => __( 'Product', 'myplugin' ),
         'add_new'            => __( 'Add New', 'myplugin' ),
@@ -103,17 +103,17 @@ function myplugin_register_product_cpt() {
         'search_items'       => __( 'Search Products', 'myplugin' ),
         'not_found'          => __( 'No products found.', 'myplugin' ),
         'not_found_in_trash' => __( 'No products found in trash.', 'myplugin' ),
-    );
+    ];
 
-    register_post_type( 'product', array(
+    register_post_type( 'product', [
         'labels'          => $labels,
         'public'          => true,
         'has_archive'     => true,
-        'supports'        => array( 'title', 'editor', 'excerpt', 'thumbnail' ),
+        'supports'        => [ 'title', 'editor', 'excerpt', 'thumbnail' ],
         'menu_icon'       => 'dashicons-cart',
         'menu_position'   => 20,
         'show_in_rest'    => true,
-        'rewrite'         => array( 'slug' => 'shop/products' ),
-    ) );
+        'rewrite'         => [ 'slug' => 'shop/products' ],
+    ] );
 }
 ```

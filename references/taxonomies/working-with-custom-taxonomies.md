@@ -5,13 +5,13 @@ Register custom taxonomies via `register_taxonomy()` on the `init` hook. WordPre
 ## register_taxonomy()
 
 ```php
-register_taxonomy( string $taxonomy, array|string $object_type, array $args = array() )
+register_taxonomy( string $taxonomy, array|string $object_type, array $args = [] )
 ```
 
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
 | `$taxonomy` | string | Yes | Taxonomy slug (lowercase, underscores for spaces). Must start with a letter. Max 32 characters in core. |
-| `$object_type` | array\|string | Yes | Post types to associate (e.g., `array( 'post', 'product' )`) |
+| `$object_type` | array\|string | Yes | Post types to associate (e.g., `[ 'post', 'product' ]`) |
 | `$args` | array | No | Configuration options (see below) |
 
 ## Arguments Reference
@@ -50,9 +50,9 @@ Passed as an array. All labels are optional — WordPress provides defaults.
 | `show_ui` | bool | Auto | Whether to generate a default UI for managing terms |
 | `show_admin_column` | bool | `false` | Display a column on the edit screen |
 | `query_var` | bool\|string | `true` (slug) | Enable query variable (e.g., `?course=appetizer`) |
-| `rewrite` | bool\|array | `array('slug' => $taxonomy)` | Permalink structure. Set `false` to disable |
+| `rewrite` | bool\|array | `[ 'slug' => $taxonomy ]` | Permalink structure. Set `false` to disable |
 | `capabilities` | array | — | Override default capabilities for this taxonomy |
-| `default_term` | array | — | Default term: `array( 'name' => 'Uncategorized', 'description' => '' )` |
+| `default_term` | array | — | Default term: `[ 'name' => 'Uncategorized', 'description' => '' ]` |
 | `sort` | bool | `false` | Whether terms are sorted alphabetically |
 | `public` | bool | Auto | Whether the taxonomy is publicly queryable |
 | `publicly_queryable` | bool | Auto | Whether it's accessible via query vars |
@@ -65,8 +65,8 @@ Passed as an array. All labels are optional — WordPress provides defaults.
 ```php
 add_action( 'init', 'myplugin_register_course_taxonomy' );
 
-function myplugin_register_course_taxonomy() {
-    $labels = array(
+function myplugin_register_course_taxonomy(): void {
+    $labels = [
         'name'              => _x( 'Courses', 'taxonomy general name', 'text-domain' ),
         'singular_name'     => _x( 'Course', 'taxonomy singular name', 'text-domain' ),
         'search_items'      => __( 'Search Courses', 'text-domain' ),
@@ -77,19 +77,19 @@ function myplugin_register_course_taxonomy() {
         'add_new_item'      => __( 'Add New Course', 'text-domain' ),
         'new_item_name'     => __( 'New Course Name', 'text-domain' ),
         'menu_name'         => __( 'Courses', 'text-domain' ),
-    );
+    ];
 
-    $args = array(
+    $args = [
         'hierarchical'      => true,
         'labels'            => $labels,
         'show_ui'           => true,
         'show_admin_column' => true,
         'query_var'         => true,
-        'rewrite'           => array( 'slug' => 'course' ),
+        'rewrite'           => [ 'slug' => 'course' ],
         'show_in_rest'      => true,
-    );
+    ];
 
-    register_taxonomy( 'course', array( 'post' ), $args );
+    register_taxonomy( 'course', [ 'post' ], $args );
 }
 ```
 
@@ -97,9 +97,9 @@ function myplugin_register_course_taxonomy() {
 
 | Function | Purpose | Signature |
 |----------|---------|-----------|
-| `wp_insert_term()` | Create a new term | `wp_insert_term( string $term, string $taxonomy, array $args = array() )` |
+| `wp_insert_term()` | Create a new term | `wp_insert_term( string $term, string $taxonomy, array $args = [] )` |
 | `get_term()` | Get a single term object | `get_term( int\|WP_Term $term, string $taxonomy = '' )` |
-| `get_terms()` | Get multiple terms | `get_terms( array|string $args = array() )` |
+| `get_terms()` | Get multiple terms | `get_terms( array|string $args = [] )` |
 | `edit_term()` | Hook fired when a term is edited | `add_action( 'edit_term', 'my_callback', 10, 3 )` |
 | `edited_term_taxonomy_id()` | Hook fired after term + taxonomy edited | `add_action( 'edited_term_taxonomy_id', 'my_callback', 10, 2 )` |
 | `create_term()` | Hook fired when a new term is created | `add_action( 'create_term', 'my_callback', 10, 3 )` |
@@ -111,7 +111,7 @@ function myplugin_register_course_taxonomy() {
 | Function | Purpose | Signature |
 |----------|---------|-----------|
 | `the_terms()` | Display terms in a list | `the_terms( int $id, string $taxonomy, string $before = '', string $sep = '', string $after = '' )` |
-| `wp_tag_cloud()` | Display a tag cloud | `wp_tag_cloud( array|string $args = array() )` |
+| `wp_tag_cloud()` | Display a tag cloud | `wp_tag_cloud( array|string $args = [] )` |
 | `get_the_term_list()` | Get terms as HTML (don't display) | `get_the_term_list( int $id, string $taxonomy, string $before = '', string $sep = '', string $after = '' )` |
 
 ## Archive URLs

@@ -25,9 +25,9 @@ wp_remote_get( string $url, array $args = array() ): array|WP_Error
 | `redirection` | int | 5 | Max redirects to follow |
 | `httpversion` | string | `'1.0'` | HTTP version |
 | `blocking` | bool | `true` | Wait for response before continuing |
-| `headers` | array | `array()` | Custom headers |
+| `headers` | array | `[]` | Custom headers |
 | `body` | mixed | `null` | Request body data |
-| `cookies` | array | `array()` | Cookies to send |
+| `cookies` | array | `[]` | Cookies to send |
 
 ### wp_remote_post()
 
@@ -38,12 +38,12 @@ wp_remote_post( string $url, array $args = array() ): array|WP_Error
 Same parameters as `wp_remote_get()`. The `'body'` arg is typically an associative array:
 
 ```php
-$response = wp_remote_post( 'https://api.example.com/endpoint', array(
-    'body' => array(
+$response = wp_remote_post( 'https://api.example.com/endpoint', [
+    'body' => [
         'name'  => 'Jane Smith',
         'email' => 'jane@example.com',
-    ),
-) );
+    ],
+] );
 ```
 
 ### wp_remote_head()
@@ -65,16 +65,16 @@ wp_remote_request( string $url, array $args = array() ): array|WP_Error
 ```
 
 ```php
-$response = wp_remote_request( 'https://api.example.com/resource/42', array(
+$response = wp_remote_request( 'https://api.example.com/resource/42', [
     'method' => 'DELETE',
-) );
+] );
 
 // PUT with body
-$response = wp_remote_request( 'https://api.example.com/resource/42', array(
+$response = wp_remote_request( 'https://api.example.com/resource/42', [
     'method' => 'PUT',
-    'body'   => json_encode( array( 'title' => 'Updated' ) ),
-    'headers' => array( 'Content-Type' => 'application/json' ),
-) );
+    'body'   => json_encode( [ 'title' => 'Updated' ] ),
+    'headers' => [ 'Content-Type' => 'application/json' ],
+] );
 ```
 
 ## Response Helpers
@@ -120,23 +120,23 @@ $data = json_decode( $body, true );
 ### Basic Auth
 
 ```php
-$response = wp_remote_get( 'https://api.example.com/protected', array(
-    'headers' => array(
+$response = wp_remote_get( 'https://api.example.com/protected', [
+    'headers' => [
         'Authorization' => 'Basic ' . base64_encode( 'username:password' ),
-    ),
-) );
+    ],
+] );
 ```
 
 ### Custom Headers / API Keys
 
 ```php
-$response = wp_remote_get( 'https://api.example.com/data', array(
-    'headers' => array(
+$response = wp_remote_get( 'https://api.example.com/data', [
+    'headers' => [
         'X-API-Key'    => 'your-api-key-here',
         'Accept'       => 'application/json',
         'Content-Type' => 'application/json',
-    ),
-) );
+    ],
+] );
 ```
 
 ## Response Codes Reference
@@ -184,7 +184,7 @@ delete_transient( string $transient ): bool
 ### Complete Cache Pattern
 
 ```php
-function myplugin_get_github_user( $username ) {
+function myplugin_get_github_user( string $username ): ?array {
     // Try cache first
     $cached = get_transient( 'myplugin_github_' . md5( $username ) );
     if ( false !== $cached ) {

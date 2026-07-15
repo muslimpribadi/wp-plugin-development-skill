@@ -41,7 +41,7 @@ if ($count < 1 || $count > 100) {
 
 // Enumerated value validation
 $status = sanitize_text_field($_POST['status']);
-$allowed = array('draft', 'publish', 'pending');
+$allowed = ['draft', 'publish', 'pending'];
 if (!in_array($status, $allowed, true)) {
     $status = 'draft'; // Default to safe value
 }
@@ -73,7 +73,7 @@ if (isset($_FILES['upload'])) {
     $mime = finfo_file($finfo, $_FILES['upload']['tmp_name']);
     finfo_close($finfo);
     
-    $allowed_types = array('image/jpeg', 'image/png', 'application/pdf');
+    $allowed_types = ['image/jpeg', 'image/png', 'application/pdf'];
     if (!in_array($mime, $allowed_types, true)) {
         wp_die('Invalid file type.');
     }

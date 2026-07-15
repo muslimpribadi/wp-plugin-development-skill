@@ -36,7 +36,7 @@ The `dbDelta()` function is **strict**. Your SQL must follow these rules:
 ## Creating a Table
 
 ```php
-function myplugin_create_table() {
+function myplugin_create_table(): void {
     global $wpdb;
 
     $table_name = $wpdb->prefix . 'myplugin_table';
@@ -62,20 +62,20 @@ function myplugin_create_table() {
 ## Adding Initial Data
 
 ```php
-function myplugin_add_initial_data() {
+function myplugin_add_initial_data(): void {
     global $wpdb;
 
     $table_name = $wpdb->prefix . 'myplugin_table';
 
     $wpdb->insert(
         $table_name,
-        array(
+        [
             'time' => current_time( 'mysql' ),
             'name' => 'Welcome',
             'text' => 'Your table is ready.',
             'url'  => '',
-        ),
-        array( '%s', '%s', '%s' ) // format specifiers (optional)
+        ],
+        [ '%s', '%s', '%s' ] // format specifiers (optional)
     );
 }
 ```
@@ -117,17 +117,17 @@ function myplugin_install() {
     add_option( 'myplugin_db_version', $myplugin_db_version );
 }
 
-function myplugin_install_data() {
+function myplugin_install_data(): void {
     global $wpdb;
     $table_name = $wpdb->prefix . 'myplugin_table';
 
     $wpdb->insert(
         $table_name,
-        array(
+        [
             'time' => current_time( 'mysql' ),
             'name' => 'Welcome',
             'text' => 'Table created successfully.',
-        )
+        ]
     );
 }
 
@@ -140,7 +140,7 @@ register_activation_hook( __FILE__, 'myplugin_install_data' );
 `dbDelta()` handles schema changes automatically. Compare version and run when needed:
 
 ```php
-function myplugin_update_db_check() {
+function myplugin_update_db_check(): void {
     global $wpdb, $myplugin_db_version;
 
     $installed_ver = get_option( 'myplugin_db_version' );

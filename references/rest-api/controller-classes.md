@@ -10,69 +10,69 @@ Controller classes organize REST endpoint logic (routes, callbacks, schema, perm
 class My_REST_Controller {
     protected $namespace = 'my-plugin/v1';
 
-    public function register_routes() {
-        register_rest_route( $this->namespace, '/items', array(
-            array(
+    public function register_routes(): void {
+        register_rest_route( $this->namespace, '/items', [
+            [
                 'methods'             => WP_REST_Server::READABLE,
-                'callback'            => array( $this, 'get_items' ),
-                'permission_callback' => array( $this, 'get_items_permissions_check' ),
+                'callback'            => [ $this, 'get_items' ],
+                'permission_callback' => [ $this, 'get_items_permissions_check' ],
                 'args'                => $this->get_collection_params(),
-            ),
-            'schema' => array( $this, 'get_item_schema' ),
-        ) );
+            ],
+            'schema' => [ $this, 'get_item_schema' ],
+        ] );
 
-        register_rest_route( $this->namespace, '/items/(?P<id>\d+)', array(
-            array(
+        register_rest_route( $this->namespace, '/items/(?P<id>\d+)', [
+            [
                 'methods'             => WP_REST_Server::READABLE,
-                'callback'            => array( $this, 'get_item' ),
-                'permission_callback' => array( $this, 'get_item_permissions_check' ),
-            ),
-            'schema' => array( $this, 'get_item_schema' ),
-        ) );
+                'callback'            => [ $this, 'get_item' ],
+                'permission_callback' => [ $this, 'get_item_permissions_check' ],
+            ],
+            'schema' => [ $this, 'get_item_schema' ],
+        ] );
     }
 
-    public function get_items( $request ) {
+    public function get_items( WP_REST_Request $request ): array {
         // Return collection of items
     }
 
-    public function get_item( $request ) {
+    public function get_item( WP_REST_Request $request ): array {
         $id = (int) $request['id'];
         // Return single item
     }
 
-    public function get_items_permissions_check( $request ) {
+    public function get_items_permissions_check( WP_REST_Request $request ): bool {
         return current_user_can( 'read' );
     }
 
-    public function get_item_permissions_check( $request ) {
+    public function get_item_permissions_check( WP_REST_Request $request ): bool {
         return current_user_can( 'read' );
     }
 
-    public function prepare_item_for_response( $item, $request ) {
-        $data = array(
+    public function prepare_item_for_response( object $item, WP_REST_Request $request ): array {
+        $data = [
             'id'    => (int) $item->ID,
             'title' => $item->post_title,
-        );
+        ];
         return rest_ensure_response( $data );
     }
 
-    public function get_item_schema() {
-        return array(
+    public function get_item_schema(): array {
+        return [
             '$schema'    => 'http://json-schema.org/draft-04/schema#',
             'title'      => 'item',
             'type'       => 'object',
-            'properties' => array(
-                'id'    => array( 'description' => 'ID', 'type' => 'integer', 'context' => array( 'view', 'edit' ), 'readonly' => true ),
-                'title' => array( 'description' => 'Title', 'type' => 'string', 'context' => array( 'view', 'edit' ) ),
-            ),
-        );
+            'properties' => [
+                'id'    => [ 'description' => 'ID', 'type' => 'integer', 'context' => [ 'view', 'edit' ], 'readonly' => true ],
+                'title' => [ 'description' => 'Title', 'type' => 'string', 'context' => [ 'view', 'edit' ] ],
+            ],
+        ];
     }
 
-    protected function get_collection_params() {
-        return array(
-            'page'     => array( 'description' => 'Page number', 'type' => 'integer', 'default' => 1 ),
-            'per_page' => array( 'description' => 'Items per page', 'type' => 'integer', 'default' => 10, 'maximum' => 100 ),
-        );
+    protected function get_collection_params(): array {
+        return [
+            'page'     => [ 'description' => 'Page number', 'type' => 'integer', 'default' => 1 ],
+            'per_page' => [ 'description' => 'Items per page', 'type' => 'integer', 'default' => 10, 'maximum' => 100 ],
+        ];
     }
 }
 

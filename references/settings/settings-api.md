@@ -47,18 +47,18 @@ The Settings API (added in WordPress 2.7) manages admin settings pages with form
 
 ```php
 // 1. Register setting (enables validation + auto-save)
-register_setting( 'my_group', 'my_option', array(
+register_setting( 'my_group', 'my_option', [
     'type'              => 'string',
     'sanitize_callback' => 'sanitize_text_field',
-) );
+] );
 
 // 2. Add section (group heading + description)
 add_settings_section( 'my_section', 'My Section Title', 'my_section_cb', 'my-page' );
 
 // 3. Add field (individual input within section)
-add_settings_field( 'my_field', 'Field Label', 'my_field_cb', 'my-page', 'my_section', array(
+add_settings_field( 'my_field', 'Field Label', 'my_field_cb', 'my-page', 'my_section', [
     'label_for' => 'my_field_input',
-) );
+] );
 ```
 
 ## Form Template — Settings Page HTML

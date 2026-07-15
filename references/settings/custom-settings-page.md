@@ -8,11 +8,11 @@ Combines `add_menu_page()` (or other menu API) + Settings API registration + Opt
 add_action( 'admin_init', 'myplugin_register_settings' );
 add_action( 'admin_menu', 'myplugin_add_settings_page' );
 
-function myplugin_register_settings() {
-    register_setting( 'myplugin_group', 'myplugin_options', array(
+function myplugin_register_settings(): void {
+    register_setting( 'myplugin_group', 'myplugin_options', [
         'type'              => 'array',
         'sanitize_callback' => 'myplugin_sanitize_options',
-    ) );
+    ] );
 
     add_settings_section(
         'myplugin_main',
@@ -27,7 +27,7 @@ function myplugin_register_settings() {
         'myplugin_render_color_field',
         'myplugin-page',
         'myplugin_main',
-        array( 'label_for' => 'myplugin_color' )
+        [ 'label_for' => 'myplugin_color' ]
     );
 
     add_settings_field(
@@ -36,11 +36,11 @@ function myplugin_register_settings() {
         'myplugin_render_toggle_field',
         'myplugin-page',
         'myplugin_main',
-        array( 'label_for' => 'myplugin_enabled' )
+        [ 'label_for' => 'myplugin_enabled' ]
     );
 }
 
-function myplugin_add_settings_page() {
+function myplugin_add_settings_page(): void {
     add_menu_page(
         __( 'My Plugin Settings', 'text-domain' ),
         __( 'My Plugin', 'text-domain' ),
@@ -52,7 +52,7 @@ function myplugin_add_settings_page() {
     );
 }
 
-function myplugin_render_page() {
+function myplugin_render_page(): void {
     if ( ! current_user_can( 'manage_options' ) ) {
         return;
     }
@@ -75,10 +75,11 @@ function myplugin_render_page() {
     <?php
 }
 
-function myplugin_sanitize_options( $input ) {
-    $sanitized = array();
-    $sanitized['color']   = isset( $input['color'] ) ? sanitize_hex_color( $input['color'] ) : '#000000';
-    $sanitized['enabled'] = isset( $input['enabled'] ) ? (bool) $input['enabled'] : false;
+function myplugin_sanitize_options( array $input ): array {
+    $sanitized = [
+        'color'   => isset( $input['color'] ) ? sanitize_hex_color( $input['color'] ) : '#000000',
+        'enabled' => isset( $input['enabled'] ) ? (bool) $input['enabled'] : false,
+    ];
     return $sanitized;
 }
 

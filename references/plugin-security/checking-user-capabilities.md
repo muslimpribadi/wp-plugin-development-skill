@@ -41,7 +41,7 @@ current_user_can( string $capability ): bool
 ```php
 if ( current_user_can( 'edit_others_posts' ) ) {
     ?>
-    <a href="<?php echo esc_url( add_query_arg( array( 'action' => 'delete', 'post' => get_the_ID() ), home_url() ) ); ?>">
+    <a href="<?php echo esc_url( add_query_arg( [ 'action' => 'delete', 'post' => get_the_ID() ], home_url() ) ); ?>">
         <?php esc_html_e( 'Delete Post', 'my-plugin' ); ?>
     </a>
     <?php
@@ -53,7 +53,7 @@ if ( current_user_can( 'edit_others_posts' ) ) {
 ```php
 add_action( 'init', 'myplugin_handle_delete' );
 
-function myplugin_handle_delete() {
+function myplugin_handle_delete(): void {
     if ( ! isset( $_GET['action'] ) || 'delete' !== $_GET['action'] ) {
         return;
     }

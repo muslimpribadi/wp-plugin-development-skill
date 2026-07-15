@@ -40,9 +40,9 @@ delete_option( 'my_plugin_settings' );
  */
 global $wpdb;
 
-$tables = array(
+$tables = [
     $wpdb->prefix . 'my_plugin_table',
-);
+];
 
 foreach ( $tables as $table ) {
     if ( $wpdb->get_var( "SHOW TABLES LIKE '$table'" ) !== null ) {

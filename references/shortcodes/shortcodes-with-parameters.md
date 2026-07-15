@@ -5,27 +5,27 @@ Shortcodes can accept named attributes (parameters) and have a 3-parameter callb
 ## Callback Signature
 
 ```php
-function my_shortcode( $atts = array(), $content = null, $tag = '' )
+function my_shortcode( array $atts = [], ?string $content = null, string $tag = '' ): string
 ```
 
 | Parameter | Type | Description |
 |-----------|------|-------------|
-| `$atts` | array | Shortcode attributes (e.g., `[wporg title="WP"]` → `array('title' => 'WP')`) |
+| `$atts` | array | Shortcode attributes (e.g., `[wporg title="WP"]` → `[ 'title' => 'WP' ]`) |
 | `$content` | string\|null | Enclosed content. `null` for self-closing tags. |
 | `$tag` | string | The shortcode tag name (useful for a generic handler) |
 
 ## Parsing Attributes with Defaults
 
 ```php
-function wporg_shortcode( $atts = array(), $content = null, $tag = '' ) {
+function wporg_shortcode( array $atts = [], ?string $content = null, string $tag = '' ): string {
     // Normalize keys to lowercase
     $atts = array_change_key_case( (array) $atts, CASE_LOWER );
 
     // Merge with defaults — only user-provided values override
     $wporg_atts = shortcode_atts(
-        array(
+        [
             'title' => 'WordPress.org',
-        ),
+        ],
         $atts,
         $tag
     );
@@ -62,7 +62,7 @@ Returns an array with only the keys defined in `$pairs`, merged with user values
 ```php
 add_action( 'init', 'myplugin_register_shortcodes' );
 
-function myplugin_register_shortcodes() {
+function myplugin_register_shortcodes(): void {
     add_shortcode( 'wporg', 'myplugin_wporg_handler' );
 }
 
@@ -74,15 +74,15 @@ function myplugin_register_shortcodes() {
  * @param string $tag     Shortcode tag (name). Default empty.
  * @return string Shortcode output.
  */
-function myplugin_wporg_handler( $atts = array(), $content = null, $tag = '' ) {
+function myplugin_wporg_handler( array $atts = [], ?string $content = null, string $tag = '' ): string {
     // Normalize attribute keys to lowercase
     $atts = array_change_key_case( (array) $atts, CASE_LOWER );
 
     // Set defaults and merge with user attributes
     $wporg_atts = shortcode_atts(
-        array(
+        [
             'title' => 'WordPress.org',
-        ),
+        ],
         $atts,
         $tag
     );

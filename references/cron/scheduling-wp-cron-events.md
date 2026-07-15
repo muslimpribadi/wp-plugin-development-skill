@@ -7,7 +7,7 @@ Create a custom hook and assign a callback function:
 ```php
 add_action( 'myplugin_cron_hook', 'myplugin_cron_exec' );
 
-function myplugin_cron_exec() {
+function myplugin_cron_exec(): void {
     // Task logic here
 }
 ```
@@ -17,7 +17,7 @@ function myplugin_cron_exec() {
 ## Scheduling a Recurring Event
 
 ```php
-wp_schedule_event( int $timestamp, string $recurrence, string $hook, array $args = array() )
+wp_schedule_event( int $timestamp, string $recurrence, string $hook, array $args = [] )
 ```
 
 | Parameter | Type | Required | Description |
@@ -32,7 +32,7 @@ wp_schedule_event( int $timestamp, string $recurrence, string $hook, array $args
 ```php
 add_action( 'myplugin_init', 'myplugin_schedule_task' );
 
-function myplugin_schedule_task() {
+function myplugin_schedule_task(): void {
     if ( ! wp_next_scheduled( 'myplugin_cron_hook' ) ) {
         wp_schedule_event( time(), 'hourly', 'myplugin_cron_hook' );
     }
@@ -43,12 +43,12 @@ function myplugin_schedule_task() {
 
 ```php
 if ( ! wp_next_scheduled( 'myplugin_send_emails' ) ) {
-    wp_schedule_event( time(), 'daily', 'myplugin_send_emails', array( 'user_id' => 42 ) );
+    wp_schedule_event( time(), 'daily', 'myplugin_send_emails', [ 'user_id' => 42 ] );
 }
 
 add_action( 'myplugin_send_emails', 'myplugin_send_to_user', 10, 1 );
 
-function myplugin_send_to_user( $args ) {
+function myplugin_send_to_user( array $args ): void {
     $user_id = $args['user_id'];
     // Send email to user
 }
@@ -98,7 +98,7 @@ Always unschedule tasks when your plugin deactivates:
 ```php
 register_deactivation_hook( __FILE__, 'myplugin_deactivate' );
 
-function myplugin_deactivate() {
+function myplugin_deactivate(): void {
     $timestamp = wp_next_scheduled( 'myplugin_cron_hook' );
     if ( $timestamp ) {
         wp_unschedule_event( $timestamp, 'myplugin_cron_hook' );

@@ -11,7 +11,7 @@ Enclosing shortcodes wrap content that the callback can manipulate.
 The handler receives enclosed text in the `$content` parameter:
 
 ```php
-function wporg_shortcode( $atts = array(), $content = null ) {
+function wporg_shortcode( array $atts = [], ?string $content = null ): string {
     // Process $content and return replacement
     return '<div class="box">' . $content . '</div>';
 }
@@ -23,7 +23,7 @@ add_shortcode( 'wporg', 'wporg_shortcode' );
 The `$content` parameter defaults to `null` for self-closing tags. Use `is_null()` to differentiate:
 
 ```php
-function wporg_shortcode( $atts = array(), $content = null ) {
+function wporg_shortcode( array $atts = [], ?string $content = null ): string {
     if ( ! is_null( $content ) ) {
         // Enclosed content — manipulate it
         return '<div class="box">' . esc_html( $content ) . '</div>';
@@ -39,7 +39,7 @@ function wporg_shortcode( $atts = array(), $content = null ) {
 The shortcode parser performs a **single pass**. Nested shortcodes in `$content` are not automatically parsed. Call `do_shortcode()` to re-parse:
 
 ```php
-function wporg_shortcode( $atts = array(), $content = null ) {
+function wporg_shortcode( array $atts = [], ?string $content = null ): string {
     if ( ! is_null( $content ) ) {
         $content = do_shortcode( $content );  // Re-parse nested shortcodes
     }

@@ -65,11 +65,11 @@ $content = get_post_meta($post_id, 'custom_content', true);
 echo wp_kses_post($content); // Allows p, br, a, strong, em, etc.
 
 // Strict allowlist for specific use case
-$allowed_tags = array(
-    'a'      => array('href' => true, 'title' => true),
-    'strong' => array(),
-    'em'     => array(),
-);
+$allowed_tags = [
+    'a'      => ['href' => true, 'title' => true],
+    'strong' => [],
+    'em'     => [],
+];
 echo wp_kses($user_content, $allowed_tags);
 ```
 
@@ -105,9 +105,9 @@ wp_die(esc_html('Error: ') . esc_html($user_error));
 echo '<script>var data = "' . $js_data . '";</script>';
 
 // CORRECT: Use wp_localize_script() or wp_add_inline_script()
-wp_localize_script('my-script', 'myData', array(
+wp_localize_script('my-script', 'myData', [
     'value' => $safe_value, // Automatically JSON-encoded
-));
+]);
 
 // For inline echo in PHP-generated JS:
 echo '<script>var data = ' . wp_json_encode($safe_data) . ';</script>';
@@ -127,11 +127,11 @@ wp_mail($to, $subject, $message, $headers);
 
 ```php
 // Always set proper content type and escape response data
-rest_ensure_response(array(
+rest_ensure_response([
     'status'  => 'success',
     'data'    => array_map('esc_html', $results), // Escape each string
     'count'   => absint($total),
-));
+]);
 ```
 
 ## Quick Reference: Escape or Die

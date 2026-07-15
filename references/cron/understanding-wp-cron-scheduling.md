@@ -18,15 +18,15 @@ Add custom intervals via the `cron_schedules` filter:
 ```php
 add_filter( 'cron_schedules', 'myplugin_add_cron_intervals' );
 
-function myplugin_add_cron_intervals( $schedules ) {
-    $schedules['five_seconds'] = array(
+function myplugin_add_cron_intervals( array $schedules ): array {
+    $schedules['five_seconds'] = [
         'interval' => 5,
         'display'  => esc_html__( 'Every Five Seconds' ),
-    );
-    $schedules['every_fifteen_minutes'] = array(
+    ];
+    $schedules['every_fifteen_minutes'] = [
         'interval' => 900,
         'display'  => esc_html__( 'Every Fifteen Minutes' ),
-    );
+    ];
     return $schedules;
 }
 ```

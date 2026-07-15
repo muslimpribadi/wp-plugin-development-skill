@@ -23,7 +23,7 @@ Register a submenu item under an existing top-level menu.
 ```php
 add_action( 'admin_menu', 'myplugin_register_submenus' );
 
-function myplugin_register_submenus() {
+function myplugin_register_submenus(): void {
     add_submenu_page(
         'edit.php',           // parent slug (Posts)
         'My Plugin Settings', // page_title
@@ -34,7 +34,7 @@ function myplugin_register_submenus() {
     );
 }
 
-function myplugin_render_settings() {
+function myplugin_render_settings(): void {
     if ( ! current_user_can( 'manage_options' ) ) {
         return;
     }
@@ -120,7 +120,7 @@ Remove a registered submenu item.
 ```php
 add_action( 'admin_menu', 'myplugin_remove_submenus', 99 );
 
-function myplugin_remove_submenus() {
+function myplugin_remove_submenus(): void {
     remove_submenu_page( 'edit.php', 'edit.php?post_format=aside' );
 }
 ```
@@ -132,7 +132,7 @@ Capture `$hook_suffix` from `add_submenu_page()` and use `load-$hook_suffix`:
 ```php
 add_action( 'admin_menu', 'myplugin_register_submenus' );
 
-function myplugin_register_submenus() {
+function myplugin_register_submenus(): void {
     $hook_suffix = add_submenu_page(
         'tools.php',
         'My Plugin Tools',
@@ -145,7 +145,7 @@ function myplugin_register_submenus() {
     add_action( "load-{$hook_suffix}", 'myplugin_handle_form' );
 }
 
-function myplugin_handle_form() {
+function myplugin_handle_form(): void {
     if ( ! isset( $_POST['myplugin_nonce'] ) ||
          ! wp_verify_nonce( $_POST['myplugin_nonce'], 'myplugin_save' ) ) {
         return;
@@ -156,7 +156,7 @@ function myplugin_handle_form() {
     }
 
     // Process sanitized data
-    $value = sanitize_text_field( $_POST['myplugin_setting'] );
+    $value = sanitize_text_field( $_POST['myplugin_setting'] ?? '' );
     update_option( 'myplugin_setting', $value );
 
     wp_redirect( admin_url( 'admin.php?page=my-plugin-tools&settings-updated=true' ) );

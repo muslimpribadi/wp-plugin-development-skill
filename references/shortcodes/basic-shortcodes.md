@@ -20,11 +20,11 @@ Must be registered on the `init` action hook:
 ```php
 add_action( 'init', 'myplugin_register_shortcodes' );
 
-function myplugin_register_shortcodes() {
+function myplugin_register_shortcodes(): void {
     add_shortcode( 'wporg', 'myplugin_wporg_handler' );
 }
 
-function myplugin_wporg_handler( $atts = array(), $content = null ) {
+function myplugin_wporg_handler( array $atts = [], ?string $content = null ): string {
     return '<p>WordPress.org</p>';
 }
 ```
@@ -54,11 +54,11 @@ Returns `true` if the shortcode is registered, `false` otherwise.
 ```php
 add_action( 'init', 'myplugin_register_shortcodes' );
 
-function myplugin_register_shortcodes() {
+function myplugin_register_shortcodes(): void {
     add_shortcode( 'wporg', 'myplugin_wporg_handler' );
 }
 
-function myplugin_wporg_handler( $atts = array(), $content = null ) {
+function myplugin_wporg_handler( array $atts = [], ?string $content = null ): string {
     return '<p>WordPress.org</p>';
 }
 
