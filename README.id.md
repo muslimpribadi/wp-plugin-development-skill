@@ -8,7 +8,10 @@ Keterampilan AI agent ahli untuk membuat plugin WordPress yang aman dan terstruk
 
 Paket keterampilan ini menyediakan semua yang diperlukan untuk mengembangkan plugin WordPress siap produksi — mulai dari scaffolding dan daftar pemeriksaan keamanan hingga pola lanjutan seperti REST API, custom post types, dan penjadwalan cron. Dirancang untuk AI agent tetapi juga dapat digunakan sebagai panduan referensi bagi pengembang.
 
-> **Sumber:** Keterampilan ini diturunkan dan dioptimalkan dari [Panduan Plugin Resmi WordPress.org](https://developer.wordpress.org/plugins/) (Terakhir diperbarui 14 Desember 2023). Konten telah disusun ulang untuk konsumsi AI agent dengan discovery bertahap, daftar pemeriksaan yang dapat ditindaklanjuti, dan pola validasi otomatis.
+> **Sumber:** Keterampilan ini diturunkan dan dioptimalkan dari:
+> - [Panduan Plugin Resmi WordPress.org](https://developer.wordpress.org/plugins/) (Terakhir diperbarui 14 Desember 2023).
+> - [Dasar Pengembangan Block - Panduan Block Editor Resmi Wordpress.org](https://developer.wordpress.org/block-editor/getting-started/fundamentals/) (Terakhir diperbarui 12 Juni 2024)
+> Konten telah disusun ulang untuk konsumsi AI agent dengan discovery bertahap, daftar pemeriksaan yang dapat ditindaklanjuti, dan pola validasi otomatis.
 
 ## Memulai Cepat
 
