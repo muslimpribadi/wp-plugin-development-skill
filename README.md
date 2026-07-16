@@ -8,7 +8,10 @@ An expert AI agent skill for creating secure, well-structured WordPress plugins 
 
 This skill package provides everything needed to develop production-ready WordPress plugins — from scaffolding and security checklists to advanced patterns like REST APIs, custom post types, and cron scheduling. It's designed for AI agents but can also serve as a reference guide for developers.
 
-> **Source:** This skill is derived and optimized from the [WordPress.org official Plugin Handbook](https://developer.wordpress.org/plugins/) (Last updated December 14, 2023). Content has been restructured for AI agent consumption with progressive disclosure, actionable checklists, and automated validation patterns.
+> **Source:** This skill is derived and optimized from the:
+> - [WordPress.org official Plugin Handbook](https://developer.wordpress.org/plugins/) (Last updated June 12, 2024).
+> - [WordPress.org official Fundamentals of Block Development - Block Editor Handbook](https://developer.wordpress.org/block-editor/getting-started/fundamentals/) (Last updated December 14, 2023).
+> Content has been restructured for AI agent consumption with progressive disclosure, actionable checklists, and automated validation patterns.
 
 ## Quick Start
 
